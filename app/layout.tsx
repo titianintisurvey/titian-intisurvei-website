@@ -8,26 +8,38 @@ export const metadata: Metadata = {
   title: `${company.name} | Survey dan Pemetaan`,
   description:
     "Perusahaan jasa survey, pemetaan, bathymetri, drone mapping, GIS, serta lidar dan scan 3D arsitektur di Pekanbaru.",
+  verification: {
+    google: "UIwnMVDRDYibT5ZBtOsIvOJ-n6SOokubGUUfcBC589Q",
+  },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="id">
-      <head>
-        <meta name="google-site-verification" content="UIwnMVDRDYibT5ZBtOsIvOJ-n6SOokubGUUfcBC589Q" />
-      </head>
       <body>
         <header className="site-header">
           <div className="container nav-wrap">
             <Link href="/" className="brand">
               <div className="brand-logo-wrap">
-                <Image src="/logo.png" alt={`Logo ${company.name}`} width={56} height={56} className="brand-logo" priority />
+                <Image
+                  src="/logo.png"
+                  alt={`Logo ${company.name}`}
+                  width={56}
+                  height={56}
+                  className="brand-logo"
+                  priority
+                />
               </div>
               <div className="brand-text">
                 <strong>{company.name}</strong>
                 <span>{company.tagline}</span>
               </div>
             </Link>
+
             <nav className="nav-links">
               <Link href="/#about">Profil</Link>
               <Link href="/services">Layanan</Link>
@@ -36,18 +48,29 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </nav>
           </div>
         </header>
+
         {children}
+
         <footer className="site-footer">
           <div className="container footer-wrap">
             <div>
               <strong>{company.name}</strong>
               <p>{company.address}</p>
             </div>
+
             <div className="footer-links">
               <Link href="/">Beranda</Link>
               <Link href="/services">Layanan</Link>
-              <a href={company.mapsUrl} target="_blank" rel="noreferrer">Google Maps</a>
-              <a href={`mailto:${company.email}`}>{company.email}</a>
+              <a
+                href={company.mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Google Maps
+              </a>
+              <a href={`mailto:${company.email}`}>
+                {company.email}
+              </a>
             </div>
           </div>
         </footer>
