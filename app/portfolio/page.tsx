@@ -1,84 +1,91 @@
-'use client'; // Wajib karena menggunakan state interaktif
+'use client'; // Wajib karena memuat peta interaktif di sisi browser
 
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-export default function PortfolioPage() {
-  // State untuk melacak posisi slider (0 hingga 100 persen)
-  const [sliderPosition, setSliderPosition] = useState(50);
+export default function PortfolioMapPage() {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // 1. Memuat file CSS Peta
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    // 2. Memuat file JavaScript Peta
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.async = true;
+    
+    script.onload = () => {
+      const L = (window as any).L;
+      // Memastikan peta hanya dimuat satu kali
+      if (L && mapContainerRef.current && !(mapContainerRef.current as any)._leaflet_id) {
+        
+        // Inisialisasi Peta (Titik tengah diatur ke wilayah Riau/Sumatera)
+        const map = L.map(mapContainerRef.current).setView([0.5071, 101.4478], 6);
+
+        // Mengambil tampilan peta jalan (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Data Proyek PT. Titian Inti Survei
+        const projects = [
+          { lat: 0.5071, lng: 101.4478, title: 'Survey Perairan & Sedimentasi', year: '2024', loc: 'Pekanbaru, Riau', type: 'Bathymetri' },
+          { lat: 1.6675, lng: 101.4452, title: 'Pengukuran Lahan dan Batas', year: '2023', loc: 'Dumai, Riau', type: 'Survey Lahan' },
+          { lat: -0.9500, lng: 100.3531, title: 'Pemetaan Kawasan Infrastruktur', year: '2024', loc: 'Sumatera Barat', type: 'Topografi & GIS' },
+          { lat: 0.3333, lng: 101.0000, title: 'Survey Topografi Area Tambang', year: '2025', loc: 'Kampar, Riau', type: 'Drone Mapping' }
+        ];
+
+        // Menambahkan Pin/Marker ke dalam Peta
+        projects.forEach(p => {
+          const popupContent = `
+            <div style="font-family: sans-serif; min-width: 200px; padding: 5px;">
+              <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold; color: #1e40af;">${p.title}</h3>
+              <p style="margin: 0 0 4px 0; font-size: 12px; color: #475569;"><b>Lokasi:</b> ${p.loc}</p>
+              <p style="margin: 0 0 4px 0; font-size: 12px; color: #475569;"><b>Layanan:</b> ${p.type}</p>
+              <p style="margin: 0; font-size: 12px; color: #475569;"><b>Tahun:</b> ${p.year}</p>
+            </div>
+          `;
+          L.marker([p.lat, p.lng])
+            .bindPopup(popupContent)
+            .addTo(map);
+        });
+      }
+    };
+    
+    document.body.appendChild(script);
+
+    return () => {
+      // Membersihkan memori browser saat pengguna pindah halaman
+      if (document.head.contains(link)) document.head.removeChild(link);
+      if (document.body.contains(script)) document.body.removeChild(script);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 pt-20 pb-16 px-4 flex flex-col items-center">
-      
-      {/* Bagian Header Halaman */}
-      <div className="text-center max-w-2xl mb-10">
-        <h1 className="text-3xl font-bold text-slate-800 mb-4">Portofolio Pemetaan Interaktif</h1>
+      <div className="text-center max-w-3xl mb-8 mt-10">
+        <h1 className="text-3xl font-bold text-slate-800 mb-4">Peta Sebaran Proyek</h1>
         <p className="text-slate-600">
-          Geser garis di bawah ini untuk melihat perbandingan antara kondisi lapangan asli (Before) 
-          dengan hasil pemetaan topografi dari tim PT. Titian Inti Survei (After).
+          Jelajahi lokasi berbagai proyek survei dan pemetaan yang telah diselesaikan oleh tim <b>PT. Titian Inti Survei</b>. Klik pada pin lokasi di peta untuk melihat detail pekerjaan.
         </p>
       </div>
 
-      {/* Kontainer Utama Slider */}
-      <div className="relative w-full max-w-4xl aspect-video bg-gray-200 rounded-xl overflow-hidden shadow-2xl border-4 border-white">
-        
-        {/* Gambar 1: AFTER (Misal: Hasil Peta Topografi / Kontur) */}
-        {/* Sebagai contoh, kita pakai gambar peta dari internet. Nanti ganti dengan URL gambar Anda */}
-        <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1200&auto=format&fit=crop" 
-            alt="Peta Topografi (Sesudah)" 
-            className="w-full h-full object-cover pointer-events-none"
-          />
-          <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 text-sm rounded backdrop-blur-sm">
-            Hasil Peta Kontur
-          </div>
-        </div>
-
-        {/* Gambar 2: BEFORE (Misal: Foto Udara Drone Asli) */}
-        {/* Gambar ini dipotong (clip-path) sesuai dengan posisi slider */}
+      <div className="w-full max-w-5xl bg-white p-4 rounded-xl shadow-lg border border-slate-200">
+        {/* Tempat Peta akan dirender */}
         <div 
-          className="absolute inset-0"
-          style={{ clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)` }}
+          ref={mapContainerRef} 
+          className="w-full h-[550px] rounded-lg relative"
+          style={{ zIndex: 10 }}
         >
-          <img 
-            src="https://images.unsplash.com/photo-1464638681273-0962e9b53566?q=80&w=1200&auto=format&fit=crop" 
-            alt="Foto Udara Asli (Sebelum)" 
-            className="w-full h-full object-cover pointer-events-none"
-          />
-          <div className="absolute bottom-4 left-4 bg-blue-600/80 text-white px-3 py-1 text-sm rounded backdrop-blur-sm">
-            Foto Udara Asli
+          {/* Teks sementara sebelum peta termuat */}
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-400 rounded-lg -z-10">
+            Memuat peta interaktif...
           </div>
         </div>
-
-        {/* Garis Pemisah (Slider Line) */}
-        <div 
-          className="absolute top-0 bottom-0 w-1 bg-white cursor-ew-resize pointer-events-none shadow-[0_0_10px_rgba(0,0,0,0.5)]"
-          style={{ left: `calc(${sliderPosition}% - 2px)` }}
-        >
-          {/* Ikon Pegangan (Handle) di tengah garis */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-blue-500">
-            {/* SVG Icon Panah Kiri Kanan */}
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-180 absolute">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </div>
-        </div>
-
-        {/* Input Range Tak Terlihat (Fungsi Inti Interaktif) */}
-        <input 
-          type="range" 
-          min="0" 
-          max="100" 
-          value={sliderPosition} 
-          onChange={(e) => setSliderPosition(Number(e.target.value))}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-10"
-          aria-label="Geser untuk membandingkan gambar"
-        />
       </div>
-
     </div>
   );
 }
