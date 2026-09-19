@@ -21,8 +21,8 @@ export default function PortfolioMapPage() {
       const L = (window as any).L;
       
       if (L && mapContainerRef.current && !(mapContainerRef.current as any)._leaflet_id) {
-        // Inisialisasi Peta
-        const map = L.map(mapContainerRef.current).setView([0.5071, 101.4478], 6);
+        // Inisialisasi Peta (Zoom level diubah ke 7 agar langsung fokus ke Riau/Sumatera)
+        const map = L.map(mapContainerRef.current).setView([0.5071, 101.4478], 7);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors'
@@ -49,7 +49,7 @@ export default function PortfolioMapPage() {
           L.marker([p.lat, p.lng]).bindPopup(popupContent).addTo(map);
         });
 
-        // Memaksa Leaflet untuk mengkalkulasi ulang ukuran layar agar tidak terpotong
+        // Memaksa kalkulasi ulang layar
         setTimeout(() => {
           map.invalidateSize();
         }, 500);
@@ -65,23 +65,25 @@ export default function PortfolioMapPage() {
   }, []);
 
   return (
-    <div className="py-20 px-4 md:px-10 flex flex-col items-center min-h-screen">
+    // Padding atas disesuaikan agar tidak menabrak Header (pt-24 = 96px)
+    <div className="pt-24 pb-6 px-4 md:px-8 flex flex-col items-center justify-center w-full">
       
-      <div className="text-center max-w-3xl mb-10 mt-10">
-        <h1 className="text-4xl font-bold text-white mb-6">Peta Sebaran Proyek</h1>
-        <p className="text-white/90 text-lg">
-          Jelajahi lokasi berbagai proyek survei dan pemetaan yang telah diselesaikan oleh tim <b>PT. Titian Inti Survei</b>. Klik pada pin lokasi di peta untuk melihat detail pekerjaan.
+      {/* Judul dibuat lebih ringkas agar menghemat ruang vertikal */}
+      <div className="text-center max-w-4xl mb-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2">Peta Sebaran Proyek</h1>
+        <p className="text-slate-600 text-sm md:text-base">
+          Jelajahi lokasi survei <b>PT. Titian Inti Survei</b>. Klik pin lokasi untuk melihat detail.
         </p>
       </div>
 
-      <div className="w-full max-w-6xl bg-white p-3 rounded-xl shadow-2xl z-10">
-        {/* PENGATURAN TINGGI KAKU DI SINI UNTUK MENCEGAH PETA TERJEPIT */}
+      <div className="w-full max-w-6xl bg-white p-2 rounded-xl shadow-md border border-slate-200">
         <div 
           ref={mapContainerRef} 
-          style={{ height: '600px', width: '100%', zIndex: 1 }}
-          className="rounded-lg relative bg-slate-100"
+          // Tinggi dinamis: 100% tinggi layar dikurangi 320px (untuk Header, Teks, dan Footer)
+          style={{ height: 'calc(100vh - 320px)', minHeight: '400px', width: '100%', zIndex: 1 }}
+          className="rounded-lg relative bg-slate-100 overflow-hidden"
         >
-          <div className="absolute inset-0 flex items-center justify-center text-slate-500 -z-10">
+          <div className="absolute inset-0 flex items-center justify-center text-slate-400 -z-10">
             Memuat peta interaktif...
           </div>
         </div>
