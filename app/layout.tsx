@@ -19,9 +19,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
+      {/* INI ADALAH MESIN TAILWIND AGAR DESAIN BISA DIBACA */}
+      <head>
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
       <body className="bg-slate-50">
         
-        {/* Top Banner (Bilah Pengumuman Atas) ala DroneDeploy */}
+        {/* Top Banner (Bilah Pengumuman Atas) */}
         <div className="bg-[#0b132b] text-white text-sm py-2 px-4 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 z-50 relative">
           <span className="font-bold text-blue-400">INFO TERBARU &rarr;</span>
           <span className="text-center">Layanan Pemetaan Lidar dan 3D Presisi Tinggi kini tersedia untuk proyek Anda.</span>
@@ -58,7 +62,7 @@ export default function RootLayout({
                 <Link href="/#projects" className="hover:text-blue-300 transition-colors">Pengalaman</Link>
               </nav>
 
-              {/* Tombol Aksi Kanan (Pill Button) */}
+              {/* Tombol Aksi Kanan */}
               <div className="hidden md:flex items-center gap-5 drop-shadow-md">
                 <Link href="/#contact" className="font-semibold hover:text-blue-300 transition-colors">
                   Log in
