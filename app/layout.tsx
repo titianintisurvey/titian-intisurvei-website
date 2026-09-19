@@ -6,8 +6,7 @@ import { company } from "./data";
 
 export const metadata: Metadata = {
   title: `${company.name} | Survey dan Pemetaan`,
-  description:
-    "Perusahaan jasa survey, pemetaan, bathymetri, drone mapping, GIS, serta lidar dan scan 3D arsitektur di Pekanbaru.",
+  description: "Perusahaan jasa survey, pemetaan, bathymetri, drone mapping, GIS, serta lidar dan scan 3D arsitektur di Pekanbaru.",
   verification: {
     google: "UIwnMVDRDYibT5ZBtOsIvOJ-n6SOokubGUUfcBC589Q",
   },
@@ -20,61 +19,80 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
-      <body>
-        <header className="site-header">
-          <div className="container nav-wrap">
-            <Link href="/" className="brand">
-              <div className="brand-logo-wrap">
+      <body className="bg-slate-50">
+        
+        {/* Top Banner (Bilah Pengumuman Atas) ala DroneDeploy */}
+        <div className="bg-[#0b132b] text-white text-sm py-2 px-4 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 z-50 relative">
+          <span className="font-bold text-blue-400">INFO TERBARU &rarr;</span>
+          <span className="text-center">Layanan Pemetaan Lidar dan 3D Presisi Tinggi kini tersedia untuk proyek Anda.</span>
+          <Link href="/services" className="border border-white/40 hover:bg-white/20 px-4 py-1 rounded-full transition-colors text-xs font-semibold">
+            Pelajari Lebih Lanjut
+          </Link>
+        </div>
+
+        {/* Navbar Transparan & Melayang */}
+        <header className="absolute w-full z-40 bg-transparent text-white border-b border-white/20 mt-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-20">
+              
+              {/* Logo & Brand */}
+              <Link href="/" className="flex items-center gap-3">
                 <Image
                   src="/logo.png"
                   alt={`Logo ${company.name}`}
-                  width={56}
-                  height={56}
-                  className="brand-logo"
+                  width={48}
+                  height={48}
+                  className="bg-white rounded-full p-1 shadow-md"
                   priority
                 />
-              </div>
-              <div className="brand-text">
-                <strong>{company.name}</strong>
-                <span>{company.tagline}</span>
-              </div>
-            </Link>
+                <strong className="text-xl md:text-2xl tracking-tight font-bold drop-shadow-md">
+                  {company.name}
+                </strong>
+              </Link>
 
-            <nav className="nav-links">
-              <Link href="/#about">Profil</Link>
-              <Link href="/services">Layanan</Link>
-              <Link href="/portfolio">Portofolio</Link>
-              <Link href="/#projects">Pengalaman</Link>
-              <Link href="/#contact">Kontak</Link>
-            </nav>
+              {/* Menu Tengah */}
+              <nav className="hidden md:flex space-x-8 font-medium drop-shadow-md">
+                <Link href="/#about" className="hover:text-blue-300 transition-colors">Profil</Link>
+                <Link href="/services" className="hover:text-blue-300 transition-colors">Layanan</Link>
+                <Link href="/portfolio" className="hover:text-blue-300 transition-colors">Portofolio</Link>
+                <Link href="/#projects" className="hover:text-blue-300 transition-colors">Pengalaman</Link>
+              </nav>
+
+              {/* Tombol Aksi Kanan (Pill Button) */}
+              <div className="hidden md:flex items-center gap-5 drop-shadow-md">
+                <Link href="/#contact" className="font-semibold hover:text-blue-300 transition-colors">
+                  Log in
+                </Link>
+                <Link href="/#contact" className="bg-white text-slate-900 px-6 py-2.5 rounded-full font-bold hover:bg-gray-100 transition-colors shadow-lg">
+                  Hubungi Kami
+                </Link>
+              </div>
+
+            </div>
           </div>
         </header>
 
-        {children}
+        {/* Area Konten Utama */}
+        <main>
+          {children}
+        </main>
 
-        <footer className="site-footer">
-          <div className="container footer-wrap">
+        {/* Footer Minimalis */}
+        <footer className="bg-[#0b132b] text-white py-12 mt-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-              <strong>{company.name}</strong>
-              <p>{company.address}</p>
+              <strong className="text-2xl block mb-2 font-bold">{company.name}</strong>
+              <p className="text-slate-400 max-w-sm text-sm leading-relaxed">{company.address}</p>
             </div>
-
-            <div className="footer-links">
-              <Link href="/">Beranda</Link>
-              <Link href="/services">Layanan</Link>
-              <a
-                href={company.mapsUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Google Maps
-              </a>
-              <a href={`mailto:${company.email}`}>
-                {company.email}
-              </a>
+            <div className="flex flex-wrap gap-4 text-sm font-medium">
+              <Link href="/" className="hover:text-blue-400">Beranda</Link>
+              <Link href="/services" className="hover:text-blue-400">Layanan</Link>
+              <a href={company.mapsUrl} target="_blank" rel="noreferrer" className="hover:text-blue-400">Google Maps</a>
+              <a href={`mailto:${company.email}`} className="hover:text-blue-400">{company.email}</a>
             </div>
           </div>
         </footer>
+
       </body>
     </html>
   );
