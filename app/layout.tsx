@@ -43,6 +43,7 @@ export default function RootLayout({
             <nav className="nav-links">
               <Link href="/#about">Profil</Link>
               <Link href="/services">Layanan</Link>
+              <Link href="/portfolio">Portofolio</Link>
               <Link href="/#projects">Pengalaman</Link>
               <Link href="/#contact">Kontak</Link>
             </nav>
