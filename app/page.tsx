@@ -51,17 +51,17 @@ export default function Home() {
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
 
-        {/* Tombol Pemilih Bahasa di Kanan (Melayang) */}
-        <div className="absolute top-36 right-4 md:right-10 z-20 flex gap-2 bg-black/20 p-1.5 rounded-full backdrop-blur-sm border border-white/20">
+        {/* POSISI BARU: Tombol Pemilih Bahasa ditarik ke pojok kanan atas (di atas tombol Hubungi Kami) */}
+        <div className="absolute top-4 right-4 md:right-8 z-50 flex gap-1.5 bg-black/30 p-1 rounded-full backdrop-blur-md border border-white/20 shadow-lg">
           <button 
             onClick={() => setLang('id')} 
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${lang === 'id' ? 'bg-white text-slate-900 shadow-md' : 'bg-transparent text-white hover:bg-white/20'}`}
+            className={`px-4 py-1 rounded-full text-xs font-bold transition-all ${lang === 'id' ? 'bg-white text-slate-900 shadow-sm' : 'bg-transparent text-white hover:bg-white/20'}`}
           >
             ID
           </button>
           <button 
             onClick={() => setLang('en')} 
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${lang === 'en' ? 'bg-white text-slate-900 shadow-md' : 'bg-transparent text-white hover:bg-white/20'}`}
+            className={`px-4 py-1 rounded-full text-xs font-bold transition-all ${lang === 'en' ? 'bg-white text-slate-900 shadow-sm' : 'bg-transparent text-white hover:bg-white/20'}`}
           >
             EN
           </button>
@@ -96,15 +96,15 @@ export default function Home() {
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
-            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
               <h3 className="text-xl font-bold text-slate-800 mb-3">{t.feat1Title}</h3>
               <p className="text-slate-600">{t.feat1Desc}</p>
             </div>
-            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
               <h3 className="text-xl font-bold text-slate-800 mb-3">{t.feat2Title}</h3>
               <p className="text-slate-600">{t.feat2Desc}</p>
             </div>
-            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
               <h3 className="text-xl font-bold text-slate-800 mb-3">{t.feat3Title}</h3>
               <p className="text-slate-600">{t.feat3Desc}</p>
             </div>
