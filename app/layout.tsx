@@ -33,28 +33,30 @@ export default function RootLayout({
           </Link>
         </div>
 
-        {/* Navbar Melayang dengan Gradasi Mencolok ala DroneDeploy */}
+        {/* Navbar Melayang dengan Gradasi */}
         <header className="absolute w-full z-40 text-white mt-10 bg-gradient-to-b from-[#0b132b]/95 via-[#0b132b]/60 to-transparent pt-2 pb-8 border-none">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-20">
+            
+            {/* Mengganti h-20 menjadi py-3 agar area menu bisa menyesuaikan tinggi logo baru */}
+            <div className="flex justify-between items-center py-3">
               
-              {/* Logo & Brand */}
-              <Link href="/" className="flex items-center gap-3">
+              {/* Logo & Brand Bertumpuk Atas-Bawah */}
+              <Link href="/" className="flex flex-col items-start gap-1 hover:opacity-90 transition-opacity">
                 <Image
                   src="/logo.png"
                   alt={`Logo ${company.name}`}
-                  width={48}
-                  height={48}
-                  className="bg-white rounded-full p-1 shadow-md"
+                  width={72} 
+                  height={72} 
+                  className="bg-white rounded-full p-1.5 shadow-lg"
                   priority
                 />
-                <strong className="text-xl md:text-2xl tracking-tight font-bold drop-shadow-md">
+                <strong className="text-lg md:text-xl tracking-tight font-bold drop-shadow-md">
                   {company.name}
                 </strong>
               </Link>
 
               {/* Menu Tengah */}
-              <nav className="hidden md:flex space-x-8 font-medium drop-shadow-md">
+              <nav className="hidden md:flex space-x-8 font-medium drop-shadow-md items-center mt-2">
                 <Link href="/#about" className="hover:text-blue-300 transition-colors">Profil</Link>
                 <Link href="/services" className="hover:text-blue-300 transition-colors">Layanan</Link>
                 <Link href="/portfolio" className="hover:text-blue-300 transition-colors">Portofolio</Link>
@@ -62,7 +64,7 @@ export default function RootLayout({
               </nav>
 
               {/* Tombol Aksi Kanan */}
-              <div className="hidden md:flex items-center gap-5 drop-shadow-md">
+              <div className="hidden md:flex items-center gap-5 drop-shadow-md mt-2">
                 <Link href="/#contact" className="font-semibold hover:text-blue-300 transition-colors">
                   Log in
                 </Link>
