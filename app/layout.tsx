@@ -19,14 +19,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
-      {/* INI ADALAH MESIN TAILWIND AGAR DESAIN BISA DIBACA */}
       <head>
         <script src="https://cdn.tailwindcss.com"></script>
       </head>
       <body className="bg-slate-50">
         
-        {/* Top Banner (Bilah Pengumuman Atas) */}
-        <div className="bg-[#0b132b] text-white text-sm py-2 px-4 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 z-50 relative">
+        {/* Top Banner */}
+        <div className="bg-[#0b132b] text-white text-sm py-2 px-4 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 z-50 relative shadow-md">
           <span className="font-bold text-blue-400">INFO TERBARU &rarr;</span>
           <span className="text-center">Layanan Pemetaan Lidar dan 3D Presisi Tinggi kini tersedia untuk proyek Anda.</span>
           <Link href="/services" className="border border-white/40 hover:bg-white/20 px-4 py-1 rounded-full transition-colors text-xs font-semibold">
@@ -34,8 +33,8 @@ export default function RootLayout({
           </Link>
         </div>
 
-        {/* Navbar Transparan & Melayang */}
-        <header className="absolute w-full z-40 bg-transparent text-white border-b border-white/20 mt-10">
+        {/* Navbar Melayang dengan Gradasi Mencolok ala DroneDeploy */}
+        <header className="absolute w-full z-40 text-white mt-10 bg-gradient-to-b from-[#0b132b]/95 via-[#0b132b]/60 to-transparent pt-2 pb-8 border-none">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-20">
               
