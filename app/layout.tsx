@@ -37,20 +37,19 @@ export default function RootLayout({
         <header className="absolute w-full z-40 text-white mt-10 bg-gradient-to-b from-[#0b132b]/95 via-[#0b132b]/60 to-transparent pt-2 pb-8 border-none">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            {/* Mengganti h-20 menjadi py-3 agar area menu bisa menyesuaikan tinggi logo baru */}
             <div className="flex justify-between items-center py-3">
               
-              {/* Logo & Brand Bertumpuk Atas-Bawah */}
-              <Link href="/" className="flex flex-col items-start gap-1 hover:opacity-90 transition-opacity">
+              {/* Logo & Brand Dibuat Rata Tengah (items-center) dan Diperbesar */}
+              <Link href="/" className="flex flex-col items-center gap-2 hover:opacity-90 transition-opacity">
                 <Image
                   src="/logo.png"
                   alt={`Logo ${company.name}`}
-                  width={72} 
-                  height={72} 
-                  className="bg-white rounded-full p-1.5 shadow-lg"
+                  width={96} 
+                  height={96} 
+                  className="bg-white rounded-full p-2 shadow-lg"
                   priority
                 />
-                <strong className="text-lg md:text-xl tracking-tight font-bold drop-shadow-md">
+                <strong className="text-xl md:text-2xl tracking-tight font-bold drop-shadow-md text-center">
                   {company.name}
                 </strong>
               </Link>
