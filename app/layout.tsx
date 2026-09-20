@@ -33,33 +33,28 @@ export default function RootLayout({
           </Link>
         </div>
 
-        {/* Navbar Melayang dengan Gradasi */}
+        {/* Navbar Melayang dengan Gradasi Mencolok ala DroneDeploy */}
         <header className="absolute w-full z-40 text-white mt-10 bg-gradient-to-b from-[#0b132b]/95 via-[#0b132b]/60 to-transparent pt-2 pb-8 border-none">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
-            <div className="flex justify-between items-center py-3">
+            <div className="flex justify-between items-center h-20">
               
-              {/* Logo & Brand dengan Efek 3D Timbul */}
-              <Link href="/" className="flex flex-col items-center gap-3 group">
-                <div className="relative p-3 rounded-full bg-gradient-to-br from-white via-slate-100 to-slate-300 shadow-[0_15px_30px_rgba(0,0,0,0.6)] border-t border-white/80 group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-300">
-                  <Image
-                    src="/logo.png"
-                    alt={`Logo ${company.name}`}
-                    width={85} 
-                    height={85} 
-                    className="drop-shadow-md"
-                    priority
-                  />
-                  {/* Efek pantulan cahaya ala 3D di bagian atas logo */}
-                  <div className="absolute top-1 left-1/4 right-1/4 h-3 bg-white/60 rounded-full blur-[2px]"></div>
-                </div>
-                <strong className="text-xl md:text-2xl tracking-tight font-extrabold drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] text-center text-white group-hover:text-blue-100 transition-colors">
+              {/* Logo & Brand */}
+              <Link href="/" className="flex items-center gap-3">
+                <Image
+                  src="/logo.png"
+                  alt={`Logo ${company.name}`}
+                  width={48}
+                  height={48}
+                  className="bg-white rounded-full p-1 shadow-md"
+                  priority
+                />
+                <strong className="text-xl md:text-2xl tracking-tight font-bold drop-shadow-md">
                   {company.name}
                 </strong>
               </Link>
 
               {/* Menu Tengah */}
-              <nav className="hidden md:flex space-x-8 font-medium drop-shadow-md items-center mt-2">
+              <nav className="hidden md:flex space-x-8 font-medium drop-shadow-md">
                 <Link href="/#about" className="hover:text-blue-300 transition-colors">Profil</Link>
                 <Link href="/services" className="hover:text-blue-300 transition-colors">Layanan</Link>
                 <Link href="/portfolio" className="hover:text-blue-300 transition-colors">Portofolio</Link>
@@ -67,7 +62,7 @@ export default function RootLayout({
               </nav>
 
               {/* Tombol Aksi Kanan */}
-              <div className="hidden md:flex items-center gap-5 drop-shadow-md mt-2">
+              <div className="hidden md:flex items-center gap-5 drop-shadow-md">
                 <Link href="/#contact" className="font-semibold hover:text-blue-300 transition-colors">
                   Log in
                 </Link>
@@ -80,10 +75,12 @@ export default function RootLayout({
           </div>
         </header>
 
+        {/* Area Konten Utama */}
         <main>
           {children}
         </main>
 
+        {/* Footer Minimalis */}
         <footer className="bg-[#0b132b] text-white py-12 mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
