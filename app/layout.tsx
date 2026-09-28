@@ -60,6 +60,11 @@ export default function RootLayout({
                 <Link href="/services" className="hover:text-blue-300 transition-colors">Layanan</Link>
                 <Link href="/portfolio" className="hover:text-blue-300 transition-colors">Portofolio</Link>
                 <Link href="/#projects" className="hover:text-blue-300 transition-colors">Pengalaman</Link>
+                
+                {/* Menu Tools Baru (Untuk Tampilan Desktop) */}
+                <Link href="/peta-pancang.html" target="_blank" rel="noopener noreferrer" className="text-[#38bdf8] font-bold hover:text-blue-300 transition-colors">
+                  Tools
+                </Link>
               </nav>
 
               {/* Tombol Aksi Kanan */}
@@ -89,6 +94,12 @@ export default function RootLayout({
             <div className="flex flex-wrap gap-4 text-sm font-medium">
               <Link href="/" className="hover:text-blue-400">Beranda</Link>
               <Link href="/services" className="hover:text-blue-400">Layanan</Link>
+              
+              {/* Menu Tools Baru (Untuk Tampilan Mobile / HP) */}
+              <Link href="/peta-pancang.html" target="_blank" rel="noopener noreferrer" className="text-[#38bdf8] hover:text-blue-400">
+                Tools Peta
+              </Link>
+
               <a href={company.mapsUrl} target="_blank" rel="noreferrer" className="hover:text-blue-400">Google Maps</a>
               <a href={`mailto:${company.email}`} className="hover:text-blue-400">{company.email}</a>
             </div>
