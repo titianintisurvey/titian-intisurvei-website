@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DXF & Coordinate Viewer - Mobile Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; touch-action: manipulation; }
+        body { height: 100vh; width: 100vw; display: flex; background-color: #121212; overflow: hidden; position: relative; color: #e2e8f0; }
+
+        /* DEFAULT DESKTOP SIDEBAR */
+        .sidebar {
+            position: relative; z-index: 3000; width: 380px; height: 100vh; background: #1e293b;
+            border-right: 1px solid #334155; box-shadow: 5px 0 25px rgba(0,0,0,0.5); 
+            display: flex; flex-direction: column; padding: 15px 16px; overflow-y: auto; gap: 12px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .header { display: flex; flex-direction: column; align-items: center; margin-bottom: 5px; }
+        .header h2 { font-size: 18px; font-weight: 800; color: #f8fafc; margin-bottom: 5px; text-align: center; }
+        .badge-title { background: #0f172a; color: #38bdf8; border: 1px solid #38bdf8; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
+        .upload-area { border: 2px dashed #3b82f6; border-radius: 8px; padding: 12px 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; background: #0f172a; transition: all 0.2s ease; }
+        .upload-area:hover, .upload-area:active { border-color: #60a5fa; background: #1e3a8a; }
+        .upload-icon { font-size: 26px; }
+        .upload-text-wrapper { display: flex; flex-direction: column; text-align: left; }
+        .upload-text { font-size: 12px; font-weight: 700; color: #f8fafc; margin-bottom: 2px; }
+        .upload-hint { font-size: 10px; color: #94a3b8; }
+        input[type="file"] { display: none; }
+
+        .panel-section { background: #0f172a; border: 1px solid #334155; border-radius: 9px; padding: 12px 14px; margin-bottom: 5px; }
+        .section-title { font-size: 11px; font-weight: 700; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; border-bottom: 1px solid #334155; padding-bottom: 6px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; font-size: 11px; font-weight: 600; color: #94a3b8; margin-bottom: 4px; }
+        select { width: 100%; padding: 10px; border: 1px solid #475569; border-radius: 6px; font-size: 13px; background: #1e293b; color: #f8fafc; outline: none; }
+        select:focus { border-color: #3b82f6; }
+
+        button.btn-action { width: 100%; padding: 12px; background: #2563eb; border: none; border-radius: 7px; color: white; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        button.btn-action:hover, button.btn-action:active { background: #3b82f6; }
+        
+        #btn-close-menu { display: none; }
+        #btn-menu { display: none; }
+
+        #map { flex: 1; height: 100vh; z-index: 2; background: #121212; }
+
+        /* DEFAULT DESKTOP TOOLBAR */
+        .spatial-toolbar {
+            position: absolute; top: 20px; left: 400px; z-index: 1000; 
+            background: rgba(30, 41, 59, 0.95); padding: 8px; border-radius: 10px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; gap: 6px; 
+            border: 1px solid #475569; align-items: center; flex-wrap: wrap; 
+        }
+        .btn-map-tool { padding: 8px 12px; background: #0f172a; border: 1px solid #475569; border-radius: 6px; font-size: 12px; font-weight: 600; color: #e2e8f0; cursor: pointer; transition: all 0.2s; }
+        .btn-map-tool:hover { background: #334155; color: #ffffff; }
+        .btn-map-tool.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
+        .divider { width:1px; background:#475569; height:24px; margin:0 4px; }
+
+        .dxf-text-label { color: #10b981; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: bold; white-space: nowrap; pointer-events: none; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
+        .point-text-label { color: #facc15; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: bold; white-space: nowrap; pointer-events: none; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; margin-top: -15px; margin-left: 10px;}
+
+        #tooltip { position: absolute; background: rgba(15, 23, 42, 0.95); color: #fff; padding: 12px; border-radius: 6px; pointer-events: none; display: none; font-size: 13px; z-index: 2000; white-space: nowrap; transform: translate(-50%, -120%); box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 1px solid #475569; line-height: 1.5; }
+        .custom-popup .leaflet-popup-content-wrapper { background: rgba(15, 23, 42, 0.95); color: #ffffff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid #475569; }
+        .custom-popup .leaflet-popup-tip { background: rgba(15, 23, 42, 0.95); }
+        .popup-title { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid #334155; padding-bottom: 4px; margin-bottom: 4px; }
+        .popup-val { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #38bdf8; margin: 2px 0; }
+        
+        .measuring canvas { cursor: crosshair !important; }
+        
+        /* DESKTOP MEASURE INFO */
+        #measure-info {
+            display: none; position: absolute; bottom: 30px; left: calc(50% + 190px); 
+            transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); color: #fff; 
+            padding: 12px 24px; border-radius: 8px; border: 1px solid #38bdf8; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6); z-index: 2000; 
+            font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: bold; 
+            pointer-events: none; text-align: center; white-space: nowrap;
+        }
+
+        .leaflet-top.leaflet-right { margin-top: 15px; margin-right: 15px; }
+
+        .del-layer-icon { float: right; margin-left: 10px; background: #fee2e2; color: #ef4444; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .zoom-icon { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        
+        /* Layout untuk isi menu Layer (saat expanded) */
+        .leaflet-control-layers-overlays label { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;}
+        .leaflet-control-layers-overlays span { display: flex; align-items: center; width: 100%; color: #000; }
+        .leaflet-control-layers-expanded { padding: 10px; background: rgba(255,255,255,0.95); border-radius: 8px; }
+
+
+        /* ========================================================
+           MOBILE RESPONSIVE TWEAKS (Tampilan khusus HP Android)
+           ======================================================== */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed; left: 0; top: 0; bottom: 0; width: 85vw; max-width: 320px;
+                transform: translateX(-100%); transition: transform 0.3s ease; z-index: 4000;
+            }
+            .sidebar.open { transform: translateX(0); }
+            
+            #btn-close-menu { display: block; }
+            #btn-menu {
+                display: block; position: absolute; top: 15px; left: 15px; z-index: 2000;
+                background: #1e293b; color: #38bdf8; border: 2px solid #38bdf8; border-radius: 8px;
+                padding: 10px 14px; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            }
+
+            /* Toolbar Alat disusun 2 Baris di Bawah */
+            .spatial-toolbar {
+                top: auto; 
+                bottom: 45px; 
+                left: 50%; 
+                transform: translateX(-50%); 
+                width: 95vw; 
+                padding: 10px; 
+                justify-content: center; 
+                flex-wrap: wrap; 
+                gap: 8px;
+                border-radius: 12px;
+            }
+            .spatial-toolbar .btn-map-tool {
+                flex: 1 1 30%; 
+                text-align: center;
+                padding: 10px 5px; 
+                font-size: 12px;
+            }
+            .spatial-toolbar .divider { display: none; } 
+
+            /* Panel Jarak & Sudut di letakkan tepat di Atas Toolbar 2 Baris */
+            #measure-info {
+                bottom: 145px; 
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+            
+            /* Penyesuaian ikon layer control agar tidak tabrakan di mobile */
+            .leaflet-top.leaflet-right { margin-top: 60px; margin-right: 15px; }
+            .leaflet-bottom.leaflet-right { margin-bottom: 140px; } 
+        }
+    </style>
+</head>
+<body>
+
+<!-- Tombol Panggil Menu untuk HP -->
+<button id="btn-menu" onclick="toggleSidebar()">☰ Menu File</button>
+
+<!-- Panel Sidebar -->
+<div class="sidebar" id="appSidebar">
+    <div class="header">
+        <h2>DXF & Points Viewer</h2>
+        <div class="badge-title">Cartesian Skala 1:1</div>
+    </div>
+
+    <!-- TAB: CAD UPLOAD -->
+    <div class="panel-section">
+        <div class="section-title">📂 Render DXF Line/Arc/Text</div>
+        <div class="upload-area" id="dropZoneCad" onclick="document.getElementById('fileInputCad').click()">
+            <div class="upload-icon">📐</div>
+            <div class="upload-text-wrapper">
+                <div class="upload-text" id="uploadTextCad">Pilih File AutoCAD (.DXF)</div>
+                <div class="upload-hint">Format didukung: R12 hingga 2018</div>
+            </div>
+            <input type="file" id="fileInputCad" accept=".dxf">
+        </div>
+        <button class="btn-action" style="margin-top: 10px;" onclick="processCadFile()">Plot DXF ke Peta</button>
+    </div>
+
+    <!-- TAB: POINTS UPLOAD -->
+    <div class="panel-section">
+        <div class="section-title">📍 Plot Titik (CSV/TXT)</div>
+        <div class="form-group">
+            <label>Format Kolom</label>
+            <select id="pointFormat">
+                <option value="CNEZ" selected>Code, N (Y), E (X), Z</option>
+                <option value="CENZ">Code, E (X), N (Y), Z</option>
+            </select>
+        </div>
+        <div class="upload-area" id="dropZonePoints" onclick="document.getElementById('fileInputPoints').click()">
+            <div class="upload-icon">📌</div>
+            <div class="upload-text-wrapper">
+                <div class="upload-text" id="uploadTextPoints">Pilih Titik Koordinat</div>
+                <div class="upload-hint">Format: CSV/TXT</div>
+            </div>
+            <input type="file" id="fileInputPoints" accept=".csv,.txt">
+        </div>
+        <button class="btn-action" style="margin-top: 10px; background: #059669;" onclick="processPointsFile()">Plot Titik ke Peta</button>
+    </div>
+
+    <button class="btn-action" id="btn-close-menu" style="background: #ef4444; margin-top: auto;" onclick="toggleSidebar()">Tutup Menu X</button>
+</div>
+
+<!-- Floating Toolbar Alat -->
+<div class="spatial-toolbar">
+    <!-- Baris 1 / Grup 1 -->
+    <button class="btn-map-tool active" id="toolInfoBtn" onclick="setMapTool('info')">ℹ️ Info</button>
+    <button class="btn-map-tool" id="btn-measure" onclick="toggleMeasure()">📏 Jarak & ∠</button>
+    <button class="btn-map-tool" id="toolPolygonBtn" onclick="setMapTool('polygon')">🔷 Area</button>
+    
+    <div class="divider"></div>
+    
+    <!-- Baris 2 / Grup 2 -->
+    <button class="btn-map-tool" onclick="toggleMapBackground()" id="btnBgToggle">🌗 Gelap</button>
+    <button class="btn-map-tool" style="color:#ef4444;" onclick="clearMeasurement()">🗑️ Reset</button>
+    <button class="btn-map-tool" style="color:#f87171;" onclick="clearAllData()">⚠️ Hapus Map</button>
+</div>
+
+<div id="tooltip"></div>
+
+<!-- Kotak Informasi Hasil Pengukuran Jarak & Sudut -->
+<div id="measure-info">
+    <span style="color:#ecf0f1;">L: <span id="val-dist">0.000</span> m</span>
+    <span style="margin: 0 15px; color:#475569;">|</span>
+    <span style="color:#fcd34d;">∠: <span id="val-angle">0° 0' 0"</span></span>
+</div>
+
+<div id="map"></div>
+
+<!-- Libraries -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.min.js"></script>
+
+<script>
+    // --- UI LOGIC (Responsive Sidebar) ---
+    function toggleSidebar() {
+        document.getElementById('appSidebar').classList.toggle('open');
+    }
+
+    // 1. Inisialisasi Peta
+    const map = L.map('map', { 
+        crs: L.CRS.Simple, minZoom: -20, maxZoom: 30,
+        zoomControl: false, doubleClickZoom: false 
+    }).setView([0, 0], 1);
+    
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Close sidebar on map click
+    map.on('mousedown touchstart', function() {
+        document.getElementById('appSidebar').classList.remove('open');
+    });
+
+    // REVISI: Mengubah collapsed menjadi true agar menu layer berbentuk ikon kotak
+    const layerControl = L.control.layers({}, {}, { position: 'topright', collapsed: true }).addTo(map);
+    let customLayers = {}; 
+    const drawLayer = L.featureGroup().addTo(map); 
+
+    let rawCadFile = null;
+    let rawPointsFile = null;
+    let activeMapTool = 'info';
+    let isMapDark = true;
+
+    const snapIndicator = L.circleMarker([0, 0], { radius: 10, color: '#2ecc71', weight: 3, fill: false, interactive: false }); 
+
+    function toggleMapBackground() {
+        isMapDark = !isMapDark;
+        document.getElementById('map').style.backgroundColor = isMapDark ? '#121212' : '#ffffff';
+        document.getElementById('btnBgToggle').innerHTML = isMapDark ? '🌗 Gelap' : '🌗 Terang';
+        
+        let dxfColor = isMapDark ? '#10b981' : '#000000';
+        let ptColor = isMapDark ? '#facc15' : '#ca8a04';
+        document.querySelectorAll('.dxf-text-label').forEach(el => el.style.color = dxfColor);
+        document.querySelectorAll('.point-text-label').forEach(el => el.style.color = ptColor);
+    }
+
+    const ll = (x, y) => [y, x];
+    const getCoordKey = (y, x) => `${y.toFixed(3)}_${x.toFixed(3)}`;
+
+    // --- FUNGSI LAYER ---
+    window.zoomToLayer = function(layerId, event) {
+        event.stopPropagation(); event.preventDefault();
+        let layer = customLayers[layerId];
+        if (layer && layer.getBounds) {
+            let bounds = layer.getBounds();
+            if (bounds.isValid()) map.fitBounds(bounds, { padding: [20, 20] });
+        }
+        document.getElementById('appSidebar').classList.remove('open'); 
+    };
+
+    window.deleteCustomLayer = function(layerId, event) {
+        event.stopPropagation(); event.preventDefault();
+        if(!confirm("Yakin hapus layer ini permanen?")) return;
+        let layer = customLayers[layerId];
+        if (layer) {
+            map.removeLayer(layer);
+            layerControl.removeLayer(layer);
+            delete customLayers[layerId];
+            clearMeasurement(); 
+        }
+    };
+
+    // --- DXF ---
+    document.getElementById('fileInputCad').addEventListener('change', (e) => { 
+        if (e.target.files.length) { 
+            rawCadFile = e.target.files[0]; 
+            document.getElementById('uploadTextCad').innerHTML = `<span style="color:#60a5fa;">Siap Render:</span><br>${rawCadFile.name}`; 
+        }
+    });
+
+    async function processCadFile() {
+        if (!rawCadFile) return alert("Pilih DXF!"); 
+        document.getElementById('appSidebar').classList.remove('open'); 
+        
+        const str = await rawCadFile.text(); 
+        const p = new DxfParser(); 
+        let dxf = null; 
+        try { dxf = p.parseSync(str); } catch (e) { return alert("Gagal baca DXF."); }
+        
+        let cLayer = L.featureGroup().addTo(map);
+        cLayer.snapPoints = [];
+
+        const lineColor = isMapDark ? '#94a3b8' : '#334155'; 
+        const highlightColor = isMapDark ? '#38bdf8' : '#0284c7';
+
+        function drawDxEntity(ent, offsetX = 0, offsetY = 0) {
+            try {
+                if (ent.type === 'LINE') {
+                    let pt1 = ll(ent.vertices[0].x + offsetX, ent.vertices[0].y + offsetY);
+                    let pt2 = ll(ent.vertices[1].x + offsetX, ent.vertices[1].y + offsetY);
+                    L.polyline([pt1, pt2], { color: lineColor, weight: 1.5 }).addTo(cLayer); 
+                    cLayer.snapPoints.push(L.latLng(pt1), L.latLng(pt2));
+                } else if (ent.type === 'LWPOLYLINE' || ent.type === 'POLYLINE') { 
+                    const pts = ent.vertices.map(v => {
+                        let p = ll(v.x + offsetX, v.y + offsetY);
+                        cLayer.snapPoints.push(L.latLng(p));
+                        return p;
+                    }); 
+                    if (ent.shape) pts.push(pts[0]); 
+                    L.polyline(pts, { color: lineColor, weight: 1.5 }).addTo(cLayer); 
+                } else if (ent.type === 'CIRCLE') {
+                    let center = ll(ent.x + offsetX, ent.y + offsetY);
+                    L.circle(center, { radius: ent.r, color: highlightColor, fill: false, weight: 1.5 }).addTo(cLayer); 
+                    cLayer.snapPoints.push(L.latLng(center));
+                } else if (ent.type === 'ARC') {
+                    let pts = []; let start = ent.startAngle; let end = ent.endAngle;
+                    if (end < start) end += 2 * Math.PI;
+                    for (let i = 0; i <= 32; i++) {
+                        let a = start + (i / 32) * (end - start);
+                        pts.push(ll((ent.x + offsetX) + ent.r * Math.cos(a), (ent.y + offsetY) + ent.r * Math.sin(a)));
+                    }
+                    L.polyline(pts, { color: highlightColor, weight: 1.5 }).addTo(cLayer);
+                } else if (ent.type === 'INSERT') {
+                    let block = dxf.blocks[ent.name];
+                    let insX = (ent.position ? ent.position.x : ent.x) + offsetX;
+                    let insY = (ent.position ? ent.position.y : ent.y) + offsetY;
+                    if (block && block.entities && block.entities.length > 0) {
+                        block.entities.forEach(bEnt => drawDxEntity(bEnt, insX, insY));
+                    } else {
+                        let pt = ll(insX, insY);
+                        L.circleMarker(pt, { radius: 3, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.8 }).addTo(cLayer); 
+                        cLayer.snapPoints.push(L.latLng(pt));
+                    }
+                } else if (ent.type === 'POINT') {
+                    let pt = ll((ent.position ? ent.position.x : ent.x) + offsetX, (ent.position ? ent.position.y : ent.y) + offsetY);
+                    L.circleMarker(pt, { radius: 3, color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.8 }).addTo(cLayer); 
+                    cLayer.snapPoints.push(L.latLng(pt));
+                } else if (ent.type === 'TEXT' || ent.type === 'MTEXT') {
+                    let pt = ll(ent.x + offsetX, ent.y + offsetY);
+                    L.marker(pt, { icon: L.divIcon({ className: 'dxf-text-label', html: ent.text || "" }) }).addTo(cLayer);
+                }
+            } catch(e) {}
+        }
+
+        if (dxf.entities && dxf.entities.length) dxf.entities.forEach(ent => drawDxEntity(ent, 0, 0));
+        
+        if (cLayer.getLayers().length > 0) {
+            let layerId = 'dxf_' + Date.now();
+            customLayers[layerId] = cLayer;
+            let htmlLabel = `
+                <span style="display:inline-block; max-width:140px; overflow:hidden; text-overflow:ellipsis;" title="${rawCadFile.name}">📐 ${rawCadFile.name}</span>
+                <span style="float:right; display:flex; gap:4px;">
+                    <span class="zoom-icon" onclick="zoomToLayer('${layerId}', event)">🔍</span>
+                    <span class="del-layer-icon" onclick="deleteCustomLayer('${layerId}', event)">❌</span>
+                </span>`;
+            layerControl.addOverlay(cLayer, htmlLabel);
+            map.fitBounds(cLayer.getBounds(), { padding: [20, 20] });
+        } else {
+            alert("DXF kosong / format tidak terdeteksi.");
+        }
+        rawCadFile = null; document.getElementById('fileInputCad').value = ""; document.getElementById('uploadTextCad').textContent = "Pilih File DXF";
+    }
+
+    // --- POINTS CSV ---
+    document.getElementById('fileInputPoints').addEventListener('change', (e) => { 
+        if (e.target.files.length) { 
+            rawPointsFile = e.target.files[0]; 
+            document.getElementById('uploadTextPoints').innerHTML = `<span style="color:#60a5fa;">Siap Plot:</span><br>${rawPointsFile.name}`; 
+        }
+    });
+
+    async function processPointsFile() {
+        if (!rawPointsFile) return alert("Pilih CSV/TXT!");
+        document.getElementById('appSidebar').classList.remove('open');
+        
+        const format = document.getElementById('pointFormat').value;
+        const str = await rawPointsFile.text();
+        const lines = str.trim().split(/\r?\n/); 
+        
+        let pLayer = L.featureGroup().addTo(map);
+        pLayer.snapPoints = []; 
+        let count = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim(); if (!line) continue;
+            let cols = line.split(/[,;\t]/).map(s => s.replace(/['"]/g, '').trim());
+            if (cols.length < 3) continue;
+            if (i === 0 && isNaN(parseFloat(cols[1])) && isNaN(parseFloat(cols[2]))) continue;
+
+            let code = cols[0] !== "" ? cols[0] : `P${i}`;
+            let n, e, z;
+            if (format === 'CNEZ') { n = parseFloat(cols[1]); e = parseFloat(cols[2]); z = parseFloat(cols[3]) || 0; } 
+            else if (format === 'CENZ') { e = parseFloat(cols[1]); n = parseFloat(cols[2]); z = parseFloat(cols[3]) || 0; }
+
+            if (isNaN(e) || isNaN(n)) continue;
+
+            let pt = ll(e, n); let latlng = L.latLng(pt);
+            latlng.metaData = { code: code, n: n, e: e, z: z };
+            pLayer.snapPoints.push(latlng);
+
+            L.circleMarker(pt, { radius: 5, color: '#ffffff', weight: 1, fillColor: '#facc15', fillOpacity: 0.9 }).addTo(pLayer);
+            L.marker(pt, { icon: L.divIcon({ className: 'point-text-label', html: code }) }).addTo(pLayer);
+            count++;
+        }
+
+        if(count > 0) {
+            let layerId = 'pts_' + Date.now();
+            customLayers[layerId] = pLayer;
+            let htmlLabel = `
+                <span style="display:inline-block; max-width:140px; overflow:hidden; text-overflow:ellipsis;" title="${rawPointsFile.name}">📌 ${rawPointsFile.name}</span>
+                <span style="float:right; display:flex; gap:4px;">
+                    <span class="zoom-icon" onclick="zoomToLayer('${layerId}', event)">🔍</span>
+                    <span class="del-layer-icon" onclick="deleteCustomLayer('${layerId}', event)">❌</span>
+                </span>`;
+            layerControl.addOverlay(pLayer, htmlLabel);
+            map.fitBounds(pLayer.getBounds(), { padding: [20, 20] });
+        } else {
+            alert("Gagal membaca titik.");
+        }
+        rawPointsFile = null; document.getElementById('fileInputPoints').value = ""; document.getElementById('uploadTextPoints').innerHTML = "Pilih Titik Koordinat";
+    }
+
+    // --- TOOLS ---
+    let isMeasuring = false; let measurePhase = 0; let measureStart = null; let measureCurrent = null; let finalMeasurement = null; let currentSnap = null;
+    let drawPointsArea = []; let tempPolygonLayer = null;
+    const tooltipEl = document.getElementById('tooltip');
+
+    function setMapTool(tool) {
+        activeMapTool = tool;
+        if (tool !== 'measure') {
+            isMeasuring = false; measurePhase = 0; measureStart = null; measureCurrent = null;
+            document.getElementById('btn-measure').classList.remove('active');
+            document.body.classList.remove('measuring');
+            document.getElementById('measure-info').style.display = 'none';
+            drawOverlay(); 
+        }
+
+        ['Info', 'Polygon'].forEach(t => { 
+            const btn = document.getElementById('tool' + t + 'Btn'); 
+            if(btn) btn.className = (tool.toLowerCase() === t.toLowerCase()) ? 'btn-map-tool active' : 'btn-map-tool'; 
+        });
+        
+        drawPointsArea = [];
+        if (tempPolygonLayer) { map.removeLayer(tempPolygonLayer); tempPolygonLayer = null; }
+        if (map.hasLayer(snapIndicator)) map.removeLayer(snapIndicator);
+    }
+
+    function toggleMeasure() {
+        if(activeMapTool !== 'measure') {
+            setMapTool('measure');
+            isMeasuring = true;
+            document.getElementById('btn-measure').classList.add('active');
+            document.body.classList.add('measuring');
+            document.getElementById('measure-info').style.display = 'block'; 
+            document.getElementById('val-dist').innerText = "0.000";
+            document.getElementById('val-angle').innerText = "0° 0' 0\"";
+        } else {
+            setMapTool('info');
+        }
+    }
+
+    function clearMeasurement() {
+        finalMeasurement = null; measureStart = null; measureCurrent = null; measurePhase = 0;
+        drawPointsArea = []; drawLayer.clearLayers(); 
+        if (tempPolygonLayer) { map.removeLayer(tempPolygonLayer); tempPolygonLayer = null; }
+        drawOverlay();
+        document.getElementById('val-dist').innerText = "0.000"; document.getElementById('val-angle').innerText = "0° 0' 0\"";
+    }
+
+    function getSnappedLatLng(mouseLatLng) {
+        let activeTargets = [];
+        for (let id in customLayers) { if (map.hasLayer(customLayers[id]) && customLayers[id].snapPoints) activeTargets.push(...customLayers[id].snapPoints); }
+        if (!activeTargets.length) return mouseLatLng;
+        
+        let cPt = null, mDist = Infinity, mPt = map.latLngToContainerPoint(mouseLatLng);
+        for (let i = 0; i < activeTargets.length; i++) {
+            let tgt = activeTargets[i];
+            const d = mPt.distanceTo(map.latLngToContainerPoint(tgt)); 
+            if (d < 25 && d < mDist) { mDist = d; cPt = tgt; } 
+        }
+        return cPt || mouseLatLng;
+    }
+
+    function formatAzimuth(p1, p2) {
+        let dE = p2.lng - p1.lng; let dN = p2.lat - p1.lat; 
+        let angleDeg = Math.atan2(dE, dN) * (180 / Math.PI);
+        if (angleDeg < 0) angleDeg += 360;
+        let d = Math.floor(angleDeg), mFloat = (angleDeg - d) * 60, m = Math.floor(mFloat), s = ((mFloat - m) * 60).toFixed(1);
+        return `${d}° ${m}' ${s}"`;
+    }
+
+    const overlayCanvas = document.createElement('canvas');
+    overlayCanvas.style.position = 'absolute'; overlayCanvas.style.top = '0'; overlayCanvas.style.left = '0';
+    overlayCanvas.style.pointerEvents = 'none'; overlayCanvas.style.zIndex = '1000';
+    document.getElementById('map').appendChild(overlayCanvas);
+    const oCtx = overlayCanvas.getContext('2d');
+
+    function drawOverlay() {
+        overlayCanvas.width = map.getSize().x; overlayCanvas.height = map.getSize().y;
+        oCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+        const drawLine = (p1, p2, isDash) => {
+            let s1 = map.latLngToContainerPoint(p1), s2 = map.latLngToContainerPoint(p2);
+            oCtx.beginPath(); oCtx.moveTo(s1.x, s1.y); oCtx.lineTo(s2.x, s2.y);
+            oCtx.strokeStyle = '#f59e0b'; oCtx.lineWidth = 3;
+            if(isDash) oCtx.setLineDash([8, 8]); else oCtx.setLineDash([]);
+            oCtx.stroke(); oCtx.setLineDash([]);
+
+            let dx = p2.lng - p1.lng, dy = p2.lat - p1.lat;
+            document.getElementById('val-dist').innerText = Math.sqrt(dx*dx + dy*dy).toFixed(3);
+            document.getElementById('val-angle').innerText = formatAzimuth(p1, p2);
+            
+            oCtx.fillStyle = '#3498db'; oCtx.beginPath(); oCtx.arc(s1.x, s1.y, 5, 0, Math.PI * 2); oCtx.fill();
+            oCtx.beginPath(); oCtx.arc(s2.x, s2.y, 5, 0, Math.PI * 2); oCtx.fill();
+        }
+
+        if (isMeasuring && measurePhase === 1 && measureStart && measureCurrent) drawLine(measureStart, measureCurrent, true);
+        else if (finalMeasurement) drawLine(finalMeasurement.start, finalMeasurement.end, false);
+        else if (isMeasuring && measurePhase === 0 && !finalMeasurement) {
+            document.getElementById('val-dist').innerText = "0.000"; document.getElementById('val-angle').innerText = "0° 0' 0\"";
+        }
+    }
+
+    map.on('move zoom', drawOverlay);
+
+    map.on('mousedown', function(e) {
+        if (e.originalEvent.button !== 0 && e.originalEvent.type !== "touchstart") return;
+        let targetPt = currentSnap ? currentSnap : e.latlng;
+
+        if (isMeasuring) {
+            if (measurePhase === 0) {
+                measureStart = targetPt; measureCurrent = targetPt; measurePhase = 1; finalMeasurement = null;
+            } else if (measurePhase === 1) {
+                finalMeasurement = { start: measureStart, end: targetPt }; measurePhase = 0;
+            }
+            drawOverlay();
+        } else if (activeMapTool === 'polygon') {
+            drawPointsArea.push(targetPt);
+            L.circleMarker(targetPt, { radius: 5, color: '#ffffff', fillColor: '#10b981', fillOpacity: 1 }).addTo(drawLayer);
+            if (tempPolygonLayer) map.removeLayer(tempPolygonLayer);
+            tempPolygonLayer = L.polygon(drawPointsArea, { color: '#10b981', weight: 2.5, dashArray: '4 4', fillOpacity: 0.1 }).addTo(map);
+        }
+    });
+
+    map.on('dblclick contextmenu', function() {
+        if(activeMapTool === 'polygon' && drawPointsArea.length > 2) {
+            if (tempPolygonLayer) { map.removeLayer(tempPolygonLayer); tempPolygonLayer = null; }
+            const polygon = L.polygon(drawPointsArea, { color: '#10b981', weight: 2.5, fillColor: '#34d399', fillOpacity: 0.35 }).addTo(drawLayer);
+            
+            let area = 0;
+            for (let i = 0; i < drawPointsArea.length; i++) {
+                let p1 = drawPointsArea[i], p2 = drawPointsArea[(i + 1) % drawPointsArea.length];
+                area += (p1.lng * p2.lat) - (p2.lng * p1.lat); 
+            }
+            area = Math.abs(area / 2.0);
+            
+            polygon.bindPopup(`<div style="min-width: 160px;"><div class="popup-title">Hasil Area 1:1</div><div class="popup-val">${area.toFixed(2)} m²</div><div style="font-size:11px; color:#38bdf8;">Luas: <b>${(area / 10000).toFixed(4)} Ha</b></div></div>`, { className: 'custom-popup' }).openPopup();
+            drawPointsArea = []; setMapTool('info');
+        }
+    });
+
+    map.on('mousemove touchmove', function(e) {
+        let latlng = e.latlng;
+        if (e.originalEvent.touches && e.originalEvent.touches.length > 0) {
+            let touch = e.originalEvent.touches[0];
+            let pt = map.mouseEventToContainerPoint(touch);
+            latlng = map.containerPointToLatLng(pt);
+        }
+
+        currentSnap = getSnappedLatLng(latlng);
+        
+        if (currentSnap !== latlng && activeMapTool !== 'info') {
+            snapIndicator.setLatLng(currentSnap);
+            if (!map.hasLayer(snapIndicator)) map.addLayer(snapIndicator);
+        } else {
+            if (map.hasLayer(snapIndicator)) map.removeLayer(snapIndicator);
+        }
+        
+        if (isMeasuring && measurePhase === 1) {
+            measureCurrent = currentSnap !== latlng ? currentSnap : latlng; drawOverlay();
+        }
+
+        if (activeMapTool === 'polygon' && drawPointsArea.length > 0) {
+            if (tempPolygonLayer) map.removeLayer(tempPolygonLayer);
+            let tempPts = [...drawPointsArea, currentSnap !== latlng ? currentSnap : latlng];
+            tempPolygonLayer = L.polygon(tempPts, { color: '#10b981', weight: 2.5, dashArray: '4 4', fillOpacity: 0.1 }).addTo(map);
+        }
+
+        if (activeMapTool === 'info' && currentSnap !== latlng) {
+            let meta = currentSnap.metaData;
+            let clientX = e.originalEvent.clientX || (e.originalEvent.touches && e.originalEvent.touches[0].clientX);
+            let clientY = e.originalEvent.clientY || (e.originalEvent.touches && e.originalEvent.touches[0].clientY);
+
+            tooltipEl.style.left = (clientX + 15) + 'px';
+            tooltipEl.style.top = (clientY - 25) + 'px';
+            
+            if (meta) {
+                tooltipEl.innerHTML = `<b>${meta.code}</b>N (Y): ${meta.n.toFixed(3)}<br>E (X): ${meta.e.toFixed(3)}<br>Z: ${meta.z.toFixed(3)}`;
+            } else {
+                tooltipEl.innerHTML = `<b>Node DXF</b>N (Y): ${currentSnap.lat.toFixed(3)}<br>E (X): ${currentSnap.lng.toFixed(3)}`;
+            }
+            tooltipEl.style.display = 'block'; map.getContainer().style.cursor = 'pointer';
+        } else {
+            tooltipEl.style.display = 'none'; if (activeMapTool === 'info') map.getContainer().style.cursor = 'grab';
+        }
+    });
+
+    map.on('mouseleave touchend', () => { currentSnap = null; tooltipEl.style.display = 'none'; });
+
+</script>
+</body>
+</html>
