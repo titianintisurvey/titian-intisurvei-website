@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GIS Management Aset & Kawasan - PT Titian Inti Survey</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        body { background-color: #0f172a; color: #f8fafc; padding: 10px; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; gap: 10px; }
+
+        @media(min-width: 768px) {
+            body { flex-direction: row; padding: 15px; gap: 15px; }
+        }
+
+        .left-panel { width: 100%; max-height: 40vh; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; overflow-y: auto; padding-right: 2px;}
+        @media(min-width: 768px) {
+            .left-panel { width: 330px; max-height: none; height: 100%; padding-right: 5px; }
+        }
+        
+        .brand-container { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+        .brand-title { font-size: 13px; font-weight: 800; color: #38bdf8; line-height: 1.4; letter-spacing: 0.5px; text-transform: uppercase;}
+        
+        .control-block { background: #1e293b; border: 1px solid #334155; padding: 10px 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+        .block-label { font-size: 11.5px; font-weight: 700; color: #e2e8f0; border-left: 3px solid #38bdf8; padding-left: 6px; display: inline-block; width: fit-content;}
+        
+        .upload-box { background: #064e3b; border: 1.5px dashed #10b981; color: #34d399; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; justify-content: center; padding: 12px;}
+        .upload-box:hover { background: #047857; color: #fff; border-color: #fff;}
+        
+        select, input[type="text"], input[type="number"] { background: #0f172a; border: 1px solid #475569; color: #fff; padding: 8px 10px; border-radius: 6px; font-size: 12px; outline: none; width: 100%;}
+        select:focus, input[type="text"]:focus { border-color: #38bdf8; }
+        
+        button { background: #0284c7; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;}
+        button:hover { background: #0369a1; }
+        .btn-reset { background: #475569; }
+        .btn-draw { background: #10b981; }
+        .btn-spatial { background: #8b5cf6; }
+        .btn-gps { background: #f59e0b; color: #0f172a; font-weight: 700; }
+        .btn-gps.active { background: #ef4444; color: #fff; animation: pulseGPS 1.5s infinite; }
+        @keyframes pulseGPS { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        .sidebar { background: #1e293b; border: 1px solid #334155; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; flex: 1; min-height: 150px;}
+        .sidebar-header { background: #0f172a; padding: 10px 12px; font-size: 12px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;}
+        .sidebar-list { padding: 8px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .layer-item { background: #0f172a; border: 1px solid #334155; padding: 8px 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;}
+        .layer-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 2px;}
+        .layer-name { font-size: 11.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .layer-count { font-size: 10.5px; color: #94a3b8; }
+
+        .switch { position: relative; display: inline-block; width: 30px; height: 16px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; border-radius: 20px; transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .3s; }
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(14px); }
+        .btn-del { background: #ef4444; width: 20px; height: 20px; padding: 0; border-radius: 4px; font-size: 10px;}
+
+        .right-panel { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; height: 100%; overflow-y: auto; padding-bottom: 10px;}
+        
+        .map-container { flex: 0 0 50vh; min-height: 300px; border-radius: 8px; overflow: hidden; border: 1px solid #334155; position: relative;}
+        @media(min-width: 768px) { .map-container { flex: 0 0 55vh; min-height: 400px; } }
+        #map { width: 100%; height: 100%; background: #fff; }
+
+        .leaflet-popup-content-wrapper { background: #1e293b; color: #f8fafc; border: 1px solid #38bdf8; font-size: 11.5px; border-radius: 8px; }
+        .leaflet-popup-tip { background: #1e293b; }
+        .popup-table { border-collapse: collapse; max-height: 180px; overflow-y: auto; display: block; width: 100%;}
+        .popup-table td { padding: 3px 6px; border-bottom: 1px solid #334155; color: #f8fafc;}
+
+        .filter-bar { background: #1e293b; border: 1px solid #334155; padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0;}
+        
+        #stakeoutInfo { position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(15, 23, 42, 0.9); border: 1px solid #38bdf8; padding: 8px 12px; border-radius: 6px; font-size: 11px; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); max-width: 220px; }
+
+        .table-card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; flex: 0 0 400px; }
+        .table-header { background: #0f172a; padding: 8px 12px; font-size: 12px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;}
+        .table-wrapper { overflow: auto; flex: 1; }
+        table { width: 100%; border-collapse: collapse; font-size: 11.5px; white-space: nowrap; }
+        th, td { padding: 8px 10px; border-bottom: 1px solid #334155; text-align: left; }
+        th { background: #0f172a; color: #38bdf8; position: sticky; top: 0; z-index: 2; font-weight: 700;}
+        tr:hover { background: #334155; }
+        tr.active-row { background: rgba(2, 132, 199, 0.35); border-left: 3px solid #38bdf8; }
+
+        input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: #38bdf8;}
+        .btn-zoom { background: #0284c7; padding: 3px 8px; border-radius: 4px; font-size: 10.5px;}
+        .btn-stakeout-row { background: #f59e0b; color: #0f172a; padding: 3px 8px; border-radius: 4px; font-size: 10.5px; font-weight: 700; }
+
+        .pagination { background: #0f172a; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; border-top: 1px solid #334155;}
+        .btn-page { background: #334155; padding: 4px 10px;}
+
+        #loading { position: fixed; inset: 0; background: rgba(15,23,42,0.85); backdrop-filter: blur(3px); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; color: #38bdf8; font-weight: bold; font-size: 13px;}
+        .spinner { border: 3px solid #334155; border-top: 3px solid #38bdf8; border-radius: 50%; width: 35px; height: 35px; animation: spin 0.8s linear infinite; margin-bottom: 8px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        #modalSpatial { position: fixed; inset: 0; background: rgba(15,23,42,0.85); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 15px;}
+        .modal-box { background: #1e293b; border: 1px solid #38bdf8; border-radius: 8px; width: 100%; max-width: 400px; padding: 15px; }
+        .modal-title { font-size: 14px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 12px; }
+        .modal-field { margin-bottom: 12px; }
+        .modal-field label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <div id="load-text">Memuat Layer Kawasan Hutan & HGU Online...</div>
+    </div>
+
+    <!-- MODAL SPATIAL -->
+    <div id="modalSpatial">
+        <div class="modal-box">
+            <div class="modal-title">🛠️ Analisis Spasial (Overlay)</div>
+            <div class="modal-field"><label>1. Layer Target</label><select id="spTarget"></select></div>
+            <div class="modal-field"><label>2. Interaksi</label><select id="spAction"><option value="within">Di Dalam (Within)</option><option value="intersects">Berpotongan (Intersects)</option></select></div>
+            <div class="modal-field"><label>3. Layer Referensi</label><select id="spRef"></select></div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:15px;">
+                <button class="btn-reset" onclick="document.getElementById('modalSpatial').style.display='none'">Batal</button>
+                <button class="btn-draw" onclick="jalankanSpatialQuery()">Jalankan</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainDashboard" style="display:flex; width: 100%; height: 100%; flex-direction: column; gap:10px;">
+        <div style="display:flex; width:100%; height:100%; flex-direction:column; gap:10px;" class="desktop-flex-wrapper">
+            
+            <style>
+                @media(min-width: 768px) {
+                    .desktop-flex-wrapper { flex-direction: row !important; }
+                }
+            </style>
+
+            <!-- PANEL KIRI -->
+            <div class="left-panel">
+                <div class="brand-container">
+                    <div class="brand-title">PT Titian Inti Survey<br>GIS Management & Asset System</div>
+                </div>
+
+                <input type="file" id="fileUpload" accept=".zip,.kml,.kmz" style="display:none;" multiple />
+                <div class="control-block upload-box" onclick="document.getElementById('fileUpload').click()">
+                    📁 Upload Data Aset Tambahan (.ZIP, .KML)
+                </div>
+
+                <div class="control-block">
+                    <div class="block-label">📍 Navigasi GPS / Stakeout</div>
+                    <button class="btn-gps" id="btnGpsToggle" onclick="toggleRealtimeGPS()">📍 Aktifkan GPS Real-Time</button>
+                </div>
+
+                <div class="control-block">
+                    <div class="block-label">🔍 Cari Koordinat</div>
+                    <div style="display:flex; gap:6px;">
+                        <input type="text" id="coordInput" placeholder="Lat, Long" onkeyup="if(event.key === 'Enter') cariKoordinatTitik()"/>
+                        <button class="btn-draw" onclick="cariKoordinatTitik()">Go</button>
+                    </div>
+                </div>
+
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        <span>📂 Manajemen Layer Peta</span>
+                        <span id="layerCount" style="background:#0284c7; padding:2px 6px; border-radius:10px; color:#fff;">0</span>
+                    </div>
+                    <div class="sidebar-list" id="layerList">
+                        <div style="font-size:11px; color:#64748b; text-align:center; margin-top:15px;">Memuat layer sistem...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL KANAN -->
+            <div class="right-panel">
+                
+                <div class="map-container">
+                    <div id="map"></div>
+                    <div id="stakeoutInfo">
+                        <div style="font-weight:700; color:#38bdf8; margin-bottom:2px;">🎯 Target Stakeout</div>
+                        <div id="stakeoutText">Pilih target dari tabel...</div>
+                    </div>
+                </div>
+
+                <div class="filter-bar">
+                    <span class="block-label">Filter:</span>
+                    <input type="text" id="filterInput" placeholder="Cari atribut..." style="width: 130px; flex:1;" onkeyup="if(event.key === 'Enter') terapkanFilter()"/>
+                    <button onclick="terapkanFilter()">Cari</button>
+                    <button class="btn-spatial" onclick="bukaModalSpatial()">🛠️ Analisis Spasial</button>
+                    <button class="btn-reset" onclick="hapusSemuaGambarManual()">🗑️ Hapus Sketsa</button>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-header">
+                        <div>
+                            <span>📊 Database Atribut Spasial</span>
+                            <span id="tableStatus" style="font-size:10.5px; color:#94a3b8; font-weight:normal; margin-left:6px;">Total: 0</span>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="tabelAtribut">
+                            <thead id="tHead"></thead>
+                            <tbody id="tBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination">
+                        <button class="btn-page" id="btnPrev" onclick="gantiHalaman(-1)">⬅️ Prev</button>
+                        <span id="pageInfo">1 / 1</span>
+                        <button class="btn-page" id="btnNext" onclick="gantiHalaman(1)">Next ➡️</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Pustaka JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.min.js"></script>
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+    <script>
+        // --- INISIALISASI PETA ---
+        const map = L.map('map', { preferCanvas: true }).setView([0.5, 101.5], 8);
+        const satelit = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 22, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'] }).addTo(map);
+        const jalan = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 22, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'] });
+        
+        let baseMaps = { "Satelit Google": satelit, "Peta Jalan": jalan };
+        let overlayMaps = {}; 
+        let layerControl = L.control.layers(baseMaps, overlayMaps, { position: 'topright', collapsed: true }).addTo(map);
+
+        map.pm.setGlobalOptions({ snappable: false });
+        map.pm.addControls({ position: 'topleft', drawMarker: true, drawPolyline: true, drawPolygon: true, drawRectangle: false, drawCircleMarker: false, drawCircle: false, editMode: true, dragMode: true, cutPolygon: false, removalMode: true });
+        
+        const grupGambarManual = L.featureGroup().addTo(map);
+
+        let daftarLayer = [], fiturAktifGlobal = [], fiturTersaring = [], daftarKolomAtribut = [];
+        let layerHighlight = null, indexLayerKlik = new Map(), halSekarang = 1, dataPerHal = 20;
+        let setFiturTerpilih = new Set();
+
+        // --- OTOMATIS MUAT KAWASAN HUTAN & HGU DARI FOLDER PUBLIC ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('loading').style.display = 'flex';
+            
+            const urlKawasanHutan = '/Kawasan Hutan.zip'; 
+            const urlHGU = '/HGU.zip';
+
+            await muatLayerOnline(urlKawasanHutan, '🌳 Kawasan Hutan', '#10b981');
+            await muatLayerOnline(urlHGU, '📜 Peta HGU', '#f59e0b');
+
+            document.getElementById('loading').style.display = 'none';
+        });
+
+        async function muatLayerOnline(url, namaLayer, warnaDefault) {
+            try {
+                let response = await fetch(url);
+                if (!response.ok) throw new Error("Gagal mengambil file: " + url);
+                let buffer = await response.arrayBuffer();
+                let geojson = await shp(buffer);
+
+                let arrGeo = Array.isArray(geojson) ? geojson : [geojson];
+                let fiturBaru = [];
+                let idUnikLayer = 'lyr_' + Math.random().toString(36).substring(2, 9);
+
+                arrGeo.forEach(ds => {
+                    if(ds.features) {
+                        ds.features.forEach((feat, k) => {
+                            feat._idUnik = `${idUnikLayer}_${k}`;
+                            if(!feat.properties) feat.properties = {};
+                            feat.properties['_File_Sumber'] = namaLayer;
+                            fiturBaru.push(feat);
+                        });
+                    }
+                });
+
+                if(fiturBaru.length > 0) {
+                    let grupPeta = L.geoJSON({ type: "FeatureCollection", features: fiturBaru }, {
+                        style: { color: '#fff', weight: 1, fillColor: warnaDefault, fillOpacity: 0.4 },
+                        onEachFeature: (f, layer) => {
+                            indexLayerKlik.set(f._idUnik, layer);
+                            layer.on('click', ev => { L.DomEvent.stopPropagation(ev); klikDanZoom(f._idUnik, false); });
+                        }
+                    });
+
+                    // Masukkan ke peta secara default
+                    map.addLayer(grupPeta);
+                    daftarLayer.push({ id: idUnikLayer, nama: namaLayer, features: fiturBaru, layerGroup: grupPeta, isVisible: true });
+
+                    // Daftarkan ke kontrol overlay (ikon tumpukan di pojok kanan atas)
+                    overlayMaps[namaLayer] = grupPeta;
+                    layerControl.remove();
+                    layerControl = L.control.layers(baseMaps, overlayMaps, { position: 'topright', collapsed: true }).addTo(map);
+
+                    sinkronkanDataAplikasi();
+                }
+            } catch (err) {
+                console.warn(`Gagal memuat otomatis ${namaLayer}:`, err);
+            }
+        }
+
+        // --- UPLOAD MANUAL TAMBAHAN (.ZIP / .KML) ---
+        document.getElementById('fileUpload').addEventListener('change', async function(e) {
+            const files = e.target.files;
+            if (!files.length) return;
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('load-text').innerText = `Memproses File Upload...`;
+
+            setTimeout(async () => {
+                for (let i = 0; i < files.length; i++) {
+                    let file = files[i], ext = file.name.split('.').pop().toLowerCase(), geojson = null;
+                    try {
+                        let buffer = await file.arrayBuffer();
+                        if (ext === 'zip') geojson = await shp(buffer);
+                        else if (ext === 'kml') geojson = toGeoJSON.kml(new DOMParser().parseFromString(await file.text(), 'text/xml'));
+                        
+                        if (geojson) {
+                            let arrGeo = Array.isArray(geojson) ? geojson : [geojson];
+                            let fiturBaru = [], idUnikLayer = 'lyr_' + Date.now() + '_' + i;
+                            arrGeo.forEach(ds => {
+                                if(ds.features) {
+                                    ds.features.forEach((feat, k) => {
+                                        feat._idUnik = `${idUnikLayer}_${k}`;
+                                        if(!feat.properties) feat.properties = {};
+                                        feat.properties['_File_Sumber'] = file.name;
+                                        fiturBaru.push(feat);
+                                    });
+                                }
+                            });
+                            if(fiturBaru.length > 0) {
+                                let grupPeta = L.geoJSON({ type: "FeatureCollection", features: fiturBaru }, {
+                                    style: { color: '#fff', weight: 1, fillColor: '#3b82f6', fillOpacity: 0.5 },
+                                    onEachFeature: (f, layer) => {
+                                        indexLayerKlik.set(f._idUnik, layer);
+                                        layer.on('click', ev => { L.DomEvent.stopPropagation(ev); klikDanZoom(f._idUnik, false); });
+                                    }
+                                });
+                                map.addLayer(grupPeta);
+                                daftarLayer.push({ id: idUnikLayer, nama: file.name, features: fiturBaru, layerGroup: grupPeta, isVisible: true });
+                                
+                                overlayMaps[file.name] = grupPeta;
+                                layerControl.remove();
+                                layerControl = L.control.layers(baseMaps, overlayMaps, { position: 'topright', collapsed: true }).addTo(map);
+                            }
+                        }
+                    } catch (err) { alert(`Gagal memproses: ${file.name}`); }
+                }
+                e.target.value = ''; 
+                sinkronkanDataAplikasi();
+                document.getElementById('loading').style.display = 'none';
+            }, 100);
+        });
+
+        // --- GPS & STAKE-OUT ---
+        let gpsWatchId = null, markerGpsUser = null, circleGpsAccuracy = null, targetStakeoutLatLng = null;
+
+        window.toggleRealtimeGPS = function() {
+            let btn = document.getElementById('btnGpsToggle');
+            if (gpsWatchId) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+                gpsWatchId = null;
+                if (markerGpsUser) map.removeLayer(markerGpsUser);
+                if (circleGpsAccuracy) map.removeLayer(circleGpsAccuracy);
+                markerGpsUser = null; circleGpsAccuracy = null;
+                btn.innerText = "📍 Aktifkan GPS Real-Time";
+                btn.classList.remove('active');
+                document.getElementById('stakeoutInfo').style.display = 'none';
+                targetStakeoutLatLng = null;
+                return;
+            }
+
+            if (!navigator.geolocation) return alert("Perangkat tidak Mendukung GPS.");
+            
+            btn.innerText = "⏳ Mencari GPS...";
+            gpsWatchId = navigator.geolocation.watchPosition(pos => {
+                let lat = pos.coords.latitude, lng = pos.coords.longitude, acc = pos.coords.accuracy;
+                let latlng = [lat, lng];
+
+                btn.innerText = "🛑 Matikan GPS Real-Time";
+                btn.classList.add('active');
+
+                if (!markerGpsUser) {
+                    markerGpsUser = L.marker(latlng, {
+                        icon: L.divIcon({ className: 'gps-user-icon', html: '<div style="background:#38bdf8;width:14px;height:14px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 10px #38bdf8;"></div>', iconSize: [14,14] })
+                    }).addTo(map).bindPopup("Posisi GPS Anda");
+                    map.setView(latlng, 18);
+                } else {
+                    markerGpsUser.setLatLng(latlng);
+                }
+
+                if (!circleGpsAccuracy) {
+                    circleGpsAccuracy = L.circle(latlng, { radius: acc, color: '#38bdf8', weight: 1, fillColor: '#38bdf8', fillOpacity: 0.15 }).addTo(map);
+                } else {
+                    circleGpsAccuracy.setLatLng(latlng);
+                    circleGpsAccuracy.setRadius(acc);
+                }
+
+                if (targetStakeoutLatLng) updateStakeoutInfo(latlng, targetStakeoutLatLng);
+
+            }, err => {
+                alert("Gagal membaca GPS: " + err.message);
+                btn.innerText = "📍 Aktifkan GPS Real-Time";
+                btn.classList.remove('active');
+                gpsWatchId = null;
+            }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
+        };
+
+        window.aktifkanStakeout = function(idUnik) {
+            let feat = fiturAktifGlobal.find(f => f._idUnik === idUnik);
+            if (!feat) return;
+            let refLayer = indexLayerKlik.get(idUnik);
+            if (refLayer && refLayer.getBounds) {
+                targetStakeoutLatLng = refLayer.getBounds().getCenter();
+            } else if (refLayer && refLayer.getLatLng) {
+                targetStakeoutLatLng = refLayer.getLatLng();
+            } else {
+                return alert("Geometri tidak valid untuk stakeout.");
+            }
+
+            document.getElementById('stakeoutInfo').style.display = 'block';
+            if (markerGpsUser) {
+                updateStakeoutInfo([markerGpsUser.getLatLng().lat, markerGpsUser.getLatLng().lng], targetStakeoutLatLng);
+            } else {
+                document.getElementById('stakeoutText').innerHTML = `Target Dipilih!<br><i>Aktifkan GPS untuk navigasi jarak.</i>`;
+                map.setView(targetStakeoutLatLng, 18);
+            }
+        };
+
+        function updateStakeoutInfo(userCoord, targetCoord) {
+            let from = turf.point([userCoord[1], userCoord[0]]), to = turf.point([targetCoord[1], targetCoord[0]]);
+            let distanceKm = turf.distance(from, to, {units: 'meters'});
+            let distStr = distanceKm > 1000 ? (distanceKm / 1000).toFixed(2) + ' km' : Math.round(distanceKm) + ' meter';
+            let bearing = turf.bearing(from, to);
+            let arahStr = bearing > -22.5 && bearing <= 22.5 ? 'Utara ⬆️' :
+                          bearing > 22.5 && bearing <= 67.5 ? 'Timur Laut ↗️' :
+                          bearing > 67.5 && bearing <= 112.5 ? 'Timur ➡️' :
+                          bearing > 112.5 && bearing <= 157.5 ? 'Tenggara ↘️' :
+                          bearing > 157.5 || bearing <= -157.5 ? 'Selatan ⬇️' :
+                          bearing > -157.5 && bearing <= -112.5 ? 'Barat Daya ↙️' :
+                          bearing > -112.5 && bearing <= -67.5 ? 'Barat ⬅️' : 'Barat Laut ↖️';
+
+            document.getElementById('stakeoutText').innerHTML = `Jarak: <b>${distStr}</b><br>Arah: <b>${arahStr}</b>`;
+        }
+
+        // --- MANAJEMEN TABEL & SIDEBAR ---
+        function updatePanelSidebar() {
+            const list = document.getElementById('layerList');
+            document.getElementById('layerCount').innerText = daftarLayer.length;
+            if (daftarLayer.length === 0) return list.innerHTML = '<div style="font-size:11px; color:#64748b; text-align:center; margin-top:15px;">Belum ada layer.</div>';
+            list.innerHTML = '';
+            daftarLayer.forEach(layer => {
+                list.innerHTML += `
+                    <div class="layer-item">
+                        <div class="layer-info" title="${layer.nama}">
+                            <div class="layer-name">${layer.nama}</div>
+                            <div class="layer-count">${layer.features.length} Objek</div>
+                        </div>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <label class="switch"><input type="checkbox" ${layer.isVisible ? 'checked' : ''} onchange="toggleLayerPeta('${layer.id}')"><span class="slider"></span></label>
+                            <button class="btn-del" onclick="hapusLayerPeta('${layer.id}')">✕</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        window.toggleLayerPeta = function(id) {
+            let lyr = daftarLayer.find(l => l.id === id);
+            if(lyr) {
+                lyr.isVisible = !lyr.isVisible;
+                if(lyr.isVisible) map.addLayer(lyr.layerGroup);
+                else { map.removeLayer(lyr.layerGroup); if(layerHighlight) map.removeLayer(layerHighlight); }
+                sinkronkanDataAplikasi();
+            }
+        };
+
+        window.hapusLayerPeta = function(id) {
+            let idx = daftarLayer.findIndex(l => l.id === id);
+            if(idx > -1) {
+                map.removeLayer(daftarLayer[idx].layerGroup);
+                daftarLayer.splice(idx, 1);
+                sinkronkanDataAplikasi();
+            }
+        };
+
+        function sinkronkanDataAplikasi() {
+            fiturAktifGlobal = [];
+            let tempKolom = new Set();
+            daftarLayer.forEach(l => {
+                if (l.isVisible) {
+                    fiturAktifGlobal = fiturAktifGlobal.concat(l.features);
+                    l.features.forEach(f => Object.keys(f.properties || {}).forEach(k => tempKolom.add(k)));
+                }
+            });
+            daftarKolomAtribut = Array.from(tempKolom).filter(k => k !== '_Layer_ID').sort((a,b) => a === '_File_Sumber' ? -1 : a.localeCompare(b));
+            updatePanelSidebar();
+            terapkanFilter();
+        }
+
+        window.terapkanFilter = function() {
+            let kataKunci = document.getElementById('filterInput').value.trim().toLowerCase();
+            fiturTersaring = kataKunci ? fiturAktifGlobal.filter(f => Object.values(f.properties || {}).some(v => v !== null && String(v).toLowerCase().includes(kataKunci))) : [...fiturAktifGlobal];
+            halSekarang = 1;
+            renderTabelHTML();
+        };
+
+        function renderTabelHTML() {
+            const th = document.getElementById('tHead'), tb = document.getElementById('tBody');
+            document.getElementById('tableStatus').innerText = `Total: ${fiturTersaring.length}`;
+
+            if (fiturTersaring.length === 0) {
+                th.innerHTML = ''; tb.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:15px;">Data kosong.</td></tr>';
+                return;
+            }
+
+            let headStr = `<tr><th>Aksi / Stakeout</th><th>No</th>`;
+            daftarKolomAtribut.forEach(k => headStr += `<th>${k === '_File_Sumber' ? 'Sumber' : k}</th>`);
+            th.innerHTML = headStr + '</tr>';
+
+            let start = (halSekarang - 1) * dataPerHal, end = Math.min(start + dataPerHal, fiturTersaring.length), bodyStr = '';
+            for (let i = start; i < end; i++) {
+                let f = fiturTersaring[i];
+                bodyStr += `<tr id="baris_${f._idUnik}">
+                    <td>
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn-zoom" onclick="klikDanZoom('${f._idUnik}', true)">🔍</button>
+                            <button class="btn-stakeout-row" onclick="aktifkanStakeout('${f._idUnik}')">🎯 Stakeout</button>
+                        </div>
+                    </td>
+                    <td>${i + 1}</td>`;
+                daftarKolomAtribut.forEach(k => bodyStr += `<td>${f.properties[k] !== null ? f.properties[k] : '-'}</td>`);
+                bodyStr += `</tr>`;
+            }
+            tb.innerHTML = bodyStr;
+
+            let totalHal = Math.ceil(fiturTersaring.length / dataPerHal) || 1;
+            document.getElementById('pageInfo').innerText = `${halSekarang} / ${totalHal}`;
+            document.getElementById('btnPrev').disabled = (halSekarang === 1);
+            document.getElementById('btnNext').disabled = (halSekarang === totalHal);
+        }
+
+        window.gantiHalaman = function(arah) { halSekarang += arah; renderTabelHTML(); };
+
+        window.klikDanZoom = function(idUnik, paksaZoom) {
+            document.querySelectorAll('#tBody tr').forEach(r => r.classList.remove('active-row'));
+            let baris = document.getElementById(`baris_${idUnik}`);
+            if(baris) { baris.classList.add('active-row'); baris.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+
+            if(layerHighlight) map.removeLayer(layerHighlight);
+            let feat = fiturAktifGlobal.find(f => f._idUnik === idUnik);
+            if(!feat) return;
+
+            layerHighlight = L.geoJSON(feat, {
+                style: { color: '#facc15', weight: 4, fillColor: '#fde047', fillOpacity: 0.5 }
+            }).addTo(map);
+
+            let refLayer = indexLayerKlik.get(idUnik), titikTengah;
+            if(refLayer) {
+                if(refLayer.getBounds) { titikTengah = refLayer.getBounds().getCenter(); if(paksaZoom) map.fitBounds(refLayer.getBounds(), { padding: [40,40], maxZoom: 18 }); }
+                else if (refLayer.getLatLng) { titikTengah = refLayer.getLatLng(); if(paksaZoom) map.setView(titikTengah, 18); }
+            }
+
+            let popHTML = '<table class="popup-table"><tbody>';
+            Object.keys(feat.properties).forEach(k => {
+                if(k !== '_Layer_ID') popHTML += `<tr><td style="font-weight:600; color:#94a3b8;">${k}</td><td>: ${feat.properties[k]}</td></tr>`;
+            });
+            if(titikTengah) L.popup().setLatLng(titikTengah).setContent(popHTML + '</tbody></table>').openOn(map);
+        };
+
+        window.cariKoordinatTitik = function() {
+            let val = document.getElementById('coordInput').value, coords = val.split(',').map(c => parseFloat(c.trim()));
+            if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                map.flyTo([coords[0], coords[1]], 17);
+                L.marker([coords[0], coords[1]]).addTo(map).bindPopup("Titik Koordinat").openOn(map);
+            } else alert("Format salah. Gunakan: Latitude, Longitude");
+        };
+
+        window.hapusSemuaGambarManual = function() {
+            if (grupGambarManual.getLayers().length === 0) return alert("Tidak ada sketsa.");
+            if (confirm("Hapus semua sketsa gambar?")) grupGambarManual.clearLayers();
+        };
+
+        window.bukaModalSpatial = function() {
+            if(daftarLayer.length < 2) return alert("Butuh minimal 2 layer untuk analisis.");
+            let targetSel = document.getElementById('spTarget'), refSel = document.getElementById('spRef');
+            targetSel.innerHTML = ''; refSel.innerHTML = '';
+            daftarLayer.forEach(l => {
+                if(l.isVisible) { targetSel.innerHTML += `<option value="${l.id}">${l.nama}</option>`; refSel.innerHTML += `<option value="${l.id}">${l.nama}</option>`; }
+            });
+            if(refSel.options.length > 1) refSel.selectedIndex = 1;
+            document.getElementById('modalSpatial').style.display = 'flex';
+        };
+
+        window.jalankanSpatialQuery = function() {
+            let idTarget = document.getElementById('spTarget').value, idRef = document.getElementById('spRef').value, action = document.getElementById('spAction').value;
+            document.getElementById('modalSpatial').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+            setTimeout(() => {
+                let lTarget = daftarLayer.find(l => l.id === idTarget), lRef = daftarLayer.find(l => l.id === idRef);
+                setFiturTerpilih.clear();
+                let count = 0;
+                lTarget.features.forEach(fT => {
+                    let match = false;
+                    for (let fR of lRef.features) {
+                        try {
+                            if (action === 'within' && turf.booleanWithin(fT, fR)) { match = true; break; }
+                            if (action === 'intersects' && turf.booleanIntersects(fT, fR)) { match = true; break; }
+                        } catch(e){}
+                    }
+                    if (match) { setFiturTerpilih.add(fT._idUnik); count++; }
+                });
+                document.getElementById('loading').style.display = 'none';
+                alert(`Analisis Selesai! Ditemukan ${count} objek.`);
+            }, 100);
+        };
+    </script>
+</body>
+</html>
