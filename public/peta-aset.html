@@ -241,65 +241,42 @@
         let layerHighlight = null, indexLayerKlik = new Map(), halSekarang = 1, dataPerHal = 20;
         let setFiturTerpilih = new Set();
 
-        // --- OTOMATIS MUAT GEOJSON HGU & KAWASAN HUTAN DARI FOLDER PUBLIC ---
-        // File-file ini harus berada di folder yang sama dengan peta-aset.html (public/).
-        // Path relatif (tanpa "/" di depan) supaya tetap jalan walau website
-        // di-host di subpath (mis. GitHub Pages project site).
-        const DAFTAR_LAYER_ONLINE = [
-            { file: 'HGU_RIAU.geojson',             nama: '📜 Peta HGU',                    warna: '#f59e0b' },
-            { file: 'Kawasan_Hutan_HL.geojson',      nama: '🌳 Hutan Lindung (HL)',         warna: '#16a34a' },
-            { file: 'Kawasan_Hutan_HP.geojson',      nama: '🌲 Hutan Produksi (HP)',        warna: '#22c55e' },
-            { file: 'Kawasan_Hutan_HPK.geojson',     nama: '🌳 Hutan Prod. Konversi (HPK)', warna: '#eab308' },
-            { file: 'Kawasan_Hutan_HPT.geojson',     nama: '🌲 Hutan Prod. Terbatas (HPT)', warna: '#84cc16' },
-            { file: 'Kawasan_Hutan_KSA_KPA.geojson', nama: '🏞️ KSA / KPA',                  warna: '#06b6d4' },
-        ];
-
+        // --- OTOMATIS MUAT KAWASAN HUTAN & HGU DARI FOLDER PUBLIC ---
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('loading').style.display = 'flex';
-            let gagalMuat = [];
+            
+            const urlKawasanHutan = '/Kawasan Hutan.zip'; 
+            const urlHGU = '/HGU.zip';
 
-            for (let i = 0; i < DAFTAR_LAYER_ONLINE.length; i++) {
-                let item = DAFTAR_LAYER_ONLINE[i];
-                document.getElementById('load-text').innerText = `Memuat ${item.nama} (${i + 1}/${DAFTAR_LAYER_ONLINE.length})...`;
-                let ok = await muatLayerGeoJSON(item.file, item.nama, item.warna);
-                if (!ok) gagalMuat.push(item.file);
-            }
+            await muatLayerOnline(urlKawasanHutan, '🌳 Kawasan Hutan', '#10b981');
+            await muatLayerOnline(urlHGU, '📜 Peta HGU', '#f59e0b');
 
             document.getElementById('loading').style.display = 'none';
-
-            if (gagalMuat.length > 0) {
-                alert('Layer berikut gagal dimuat, periksa apakah filenya ada di folder public:\n- ' + gagalMuat.join('\n- '));
-            } else {
-                // Zoom ke gabungan semua layer yang berhasil dimuat
-                let semuaBounds = null;
-                daftarLayer.forEach(l => {
-                    if (l.isVisible && l.layerGroup.getBounds && l.layerGroup.getBounds().isValid()) {
-                        semuaBounds = semuaBounds ? semuaBounds.extend(l.layerGroup.getBounds()) : l.layerGroup.getBounds();
-                    }
-                });
-                if (semuaBounds) map.fitBounds(semuaBounds, { padding: [20, 20] });
-            }
         });
 
-        // Muat satu file GeoJSON dari folder public dan tampilkan sebagai layer.
-        // Mengembalikan true bila berhasil, false bila gagal (file tidak ada / rusak).
-        async function muatLayerGeoJSON(url, namaLayer, warnaDefault) {
+        async function muatLayerOnline(url, namaLayer, warnaDefault) {
             try {
                 let response = await fetch(url);
-                if (!response.ok) throw new Error('HTTP ' + response.status + ' — ' + url);
-                let geojson = await response.json();
+                if (!response.ok) throw new Error("Gagal mengambil file: " + url);
+                let buffer = await response.arrayBuffer();
+                let geojson = await shp(buffer);
 
+                let arrGeo = Array.isArray(geojson) ? geojson : [geojson];
                 let fiturBaru = [];
                 let idUnikLayer = 'lyr_' + Math.random().toString(36).substring(2, 9);
 
-                (geojson.features || []).forEach((feat, k) => {
-                    feat._idUnik = `${idUnikLayer}_${k}`;
-                    if (!feat.properties) feat.properties = {};
-                    feat.properties['_File_Sumber'] = namaLayer;
-                    fiturBaru.push(feat);
+                arrGeo.forEach(ds => {
+                    if(ds.features) {
+                        ds.features.forEach((feat, k) => {
+                            feat._idUnik = `${idUnikLayer}_${k}`;
+                            if(!feat.properties) feat.properties = {};
+                            feat.properties['_File_Sumber'] = namaLayer;
+                            fiturBaru.push(feat);
+                        });
+                    }
                 });
 
-                if (fiturBaru.length > 0) {
+                if(fiturBaru.length > 0) {
                     let grupPeta = L.geoJSON({ type: "FeatureCollection", features: fiturBaru }, {
                         style: { color: '#fff', weight: 1, fillColor: warnaDefault, fillOpacity: 0.4 },
                         onEachFeature: (f, layer) => {
@@ -318,14 +295,9 @@
                     layerControl = L.control.layers(baseMaps, overlayMaps, { position: 'topright', collapsed: true }).addTo(map);
 
                     sinkronkanDataAplikasi();
-                    return true;
                 }
-
-                console.warn(`Layer kosong: ${namaLayer}`);
-                return false;
             } catch (err) {
-                console.warn(`Gagal memuat ${namaLayer}:`, err);
-                return false;
+                console.warn(`Gagal memuat otomatis ${namaLayer}:`, err);
             }
         }
 
