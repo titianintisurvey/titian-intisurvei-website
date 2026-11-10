@@ -44,9 +44,18 @@
         .btn-reset { background: #475569; }
         .btn-draw { background: #10b981; }
         .btn-spatial { background: #8b5cf6; }
-        .btn-gps { background: #f59e0b; color: #0f172a; font-weight: 700; }
-        .btn-gps.active { background: #ef4444; color: #fff; animation: pulseGPS 1.5s infinite; }
-        @keyframes pulseGPS { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        /* Tombol GPS mengambang di peta, gaya Google Maps (lingkaran putih kecil). */
+        .btn-gps { position: absolute; right: 10px; bottom: 30px; z-index: 1000; width: 44px; height: 44px; padding: 0; border-radius: 50%; background: #fff; border: 1px solid rgba(0,0,0,0.15); box-shadow: 0 2px 6px rgba(0,0,0,0.35); }
+        .btn-gps svg { display: block; }
+        .btn-gps.active { background: #e8f0fe; border-color: #1a73e8; }
+        .btn-gps.active svg g { stroke: #1a73e8; }
+        .btn-gps.active .gps-dot { fill: #1a73e8; }
+        .btn-gps.loading svg { animation: spin 1s linear infinite; }
+        @media(max-width: 767px) {
+            .control-block { padding: 8px 10px; gap: 6px; }
+            .upload-box { padding: 10px; }
+            .brand-container { padding: 8px; }
+        }
 
         .sidebar { background: #1e293b; border: 1px solid #334155; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; flex: 1; min-height: 150px;}
         .sidebar-header { background: #0f172a; padding: 10px 12px; font-size: 12px; font-weight: 700; color: #38bdf8; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center;}
@@ -148,11 +157,6 @@
                 </div>
 
                 <div class="control-block">
-                    <div class="block-label">📍 Navigasi GPS / Stakeout</div>
-                    <button class="btn-gps" id="btnGpsToggle" onclick="toggleRealtimeGPS()">📍 Aktifkan GPS Real-Time</button>
-                </div>
-
-                <div class="control-block">
                     <div class="block-label">🔍 Cari Koordinat</div>
                     <div style="display:flex; gap:6px;">
                         <input type="text" id="coordInput" placeholder="Lat, Long" onkeyup="if(event.key === 'Enter') cariKoordinatTitik()"/>
@@ -180,6 +184,15 @@
                         <div style="font-weight:700; color:#38bdf8; margin-bottom:2px;">🎯 Target Stakeout</div>
                         <div id="stakeoutText">Pilih target dari tabel...</div>
                     </div>
+                    <button class="btn-gps" id="btnGpsToggle" onclick="toggleRealtimeGPS()" title="Aktifkan GPS Real-Time" aria-label="Aktifkan GPS Real-Time">
+                        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                            <g fill="none" stroke="#5f6368" stroke-width="2" stroke-linecap="round">
+                                <circle cx="12" cy="12" r="6.2"/>
+                                <path d="M12 2.8v3.2M12 18v3.2M2.8 12h3.2M18 12h3.2"/>
+                            </g>
+                            <circle class="gps-dot" cx="12" cy="12" r="2.6" fill="#5f6368"/>
+                        </svg>
+                    </button>
                 </div>
 
                 <div class="filter-bar">
@@ -387,6 +400,8 @@
 
         // --- GPS & STAKE-OUT ---
         let gpsWatchId = null, markerGpsUser = null, circleGpsAccuracy = null, targetStakeoutLatLng = null;
+        L.DomEvent.disableClickPropagation(document.getElementById('btnGpsToggle'));
+        L.DomEvent.disableScrollPropagation(document.getElementById('btnGpsToggle'));
 
         window.toggleRealtimeGPS = function() {
             let btn = document.getElementById('btnGpsToggle');
@@ -396,7 +411,7 @@
                 if (markerGpsUser) map.removeLayer(markerGpsUser);
                 if (circleGpsAccuracy) map.removeLayer(circleGpsAccuracy);
                 markerGpsUser = null; circleGpsAccuracy = null;
-                btn.innerText = "📍 Aktifkan GPS Real-Time";
+                btn.title = "Aktifkan GPS Real-Time"; btn.classList.remove('loading');
                 btn.classList.remove('active');
                 document.getElementById('stakeoutInfo').style.display = 'none';
                 targetStakeoutLatLng = null;
@@ -405,12 +420,12 @@
 
             if (!navigator.geolocation) return alert("Perangkat tidak Mendukung GPS.");
             
-            btn.innerText = "⏳ Mencari GPS...";
+            btn.classList.add('loading'); btn.title = "Mencari GPS...";
             gpsWatchId = navigator.geolocation.watchPosition(pos => {
                 let lat = pos.coords.latitude, lng = pos.coords.longitude, acc = pos.coords.accuracy;
                 let latlng = [lat, lng];
 
-                btn.innerText = "🛑 Matikan GPS Real-Time";
+                btn.classList.remove('loading'); btn.title = "Matikan GPS Real-Time";
                 btn.classList.add('active');
 
                 if (!markerGpsUser) {
@@ -433,7 +448,7 @@
 
             }, err => {
                 alert("Gagal membaca GPS: " + err.message);
-                btn.innerText = "📍 Aktifkan GPS Real-Time";
+                btn.title = "Aktifkan GPS Real-Time"; btn.classList.remove('loading');
                 btn.classList.remove('active');
                 gpsWatchId = null;
             }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 });
